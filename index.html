@@ -58,7 +58,7 @@
                 </div>
             </div>
 
-            <!-- 操作按鈕列 (查詢 + 一鍵清除) -->
+            <!-- 操作按鈕列 -->
             <div class="flex flex-col md:flex-row gap-3 mb-6">
                 <button onclick="searchParts()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-2.5 rounded-lg shadow transition">
                     🔍 執行批次查詢
@@ -104,7 +104,7 @@
                         </div>
                     </div>
 
-                    <!-- 外觀尺寸 (長寬高) 新增區塊 -->
+                    <!-- 外觀尺寸 -->
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
                         <label class="block text-xs font-bold text-slate-700 mb-2">📐 外觀尺寸 (選填，單位：mm)</label>
                         <div class="grid grid-cols-3 gap-2">
@@ -128,7 +128,7 @@
                         <input type="text" id="add-remarks" placeholder="例如: 附帶腳架、需搭配指定冷媒" class="w-full border rounded-lg p-2 text-sm">
                     </div>
 
-                    <!-- 新增零件照片 (最多3張) -->
+                    <!-- 新增零件照片 -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">零件照片 (最多 3 張照片)</label>
                         <input type="file" id="add-images" accept="image/*" multiple onchange="previewImages(event, 'add-preview-container')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
@@ -136,38 +136,18 @@
                     </div>
                 </div>
 
-                <!-- 通用車型資訊 -->
+                <!-- 通用車型資訊 (可動態新增多組) -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-                    <h2 class="font-bold text-sm text-slate-700 border-b pb-2">綁定適用車型</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 *</label>
-                            <input type="text" id="add-v-brand" required placeholder="例: BMW" class="w-full border rounded-lg p-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">底盤/車型 *</label>
-                            <input type="text" id="add-v-model" required placeholder="例: E36" class="w-full border rounded-lg p-2 text-sm">
-                        </div>
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h2 class="font-bold text-sm text-slate-700">🚘 綁定通用車型 (可填寫多台)</h2>
+                        <button type="button" onclick="addVehicleRow('add-vehicles-container', 'add')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-lg border border-blue-200 transition">
+                            ➕ 新增一台車型
+                        </button>
                     </div>
-
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label>
-                            <input type="number" id="add-v-start" required placeholder="例: 1992" class="w-full border rounded-lg p-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label>
-                            <input type="number" id="add-v-start-m" min="1" max="12" placeholder="1-12" class="w-full border rounded-lg p-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label>
-                            <input type="number" id="add-v-end" required placeholder="例: 1998" class="w-full border rounded-lg p-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label>
-                            <input type="number" id="add-v-end-m" min="1" max="12" placeholder="1-12" class="w-full border rounded-lg p-2 text-sm">
-                        </div>
+                    
+                    <!-- 動態車型列表容器 -->
+                    <div id="add-vehicles-container" class="space-y-3">
+                        <!-- 由 JavaScript 自動生成第一列 -->
                     </div>
                 </div>
 
@@ -181,7 +161,7 @@
 
     <!-- ================= 3. 編輯零件彈出視窗 (Modal) ================= -->
     <div id="edit-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 class="text-base font-bold text-slate-800">✏️ 編輯零件與通用車型資料</h3>
                 <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold px-2">&times;</button>
@@ -216,7 +196,7 @@
                         </div>
                     </div>
 
-                    <!-- 編輯外觀尺寸 (長寬高) -->
+                    <!-- 編輯外觀尺寸 -->
                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">📐 外觀尺寸 (mm)</label>
                         <div class="grid grid-cols-3 gap-2">
@@ -248,37 +228,17 @@
                     </div>
                 </div>
 
-                <!-- 適用車型區塊 -->
+                <!-- 適用車型動態區塊 -->
                 <div class="space-y-3 border-t pt-3">
-                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">適用車型資料</h4>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 *</label>
-                            <input type="text" id="edit-v-brand" required class="w-full border rounded-lg p-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">底盤/車型 *</label>
-                            <input type="text" id="edit-v-model" required class="w-full border rounded-lg p-2 text-sm">
-                        </div>
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">🚘 適用車型資料 (多台車)</h4>
+                        <button type="button" onclick="addVehicleRow('edit-vehicles-container', 'edit')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-2.5 py-1 rounded border border-blue-200 transition">
+                            ➕ 新增一台車型
+                        </button>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label>
-                            <input type="number" id="edit-v-start" required class="w-full border rounded-lg p-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label>
-                            <input type="number" id="edit-v-start-m" min="1" max="12" placeholder="1-12" class="w-full border rounded-lg p-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label>
-                            <input type="number" id="edit-v-end" required class="w-full border rounded-lg p-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label>
-                            <input type="number" id="edit-v-end-m" min="1" max="12" placeholder="1-12" class="w-full border rounded-lg p-2 text-sm">
-                        </div>
-                    </div>
+
+                    <!-- 編輯頁面的動態車型列表容器 -->
+                    <div id="edit-vehicles-container" class="space-y-3"></div>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-3 border-t">
@@ -289,20 +249,18 @@
         </div>
     </div>
 
-    <!-- 點擊觀看圖片的 Gallery Modal -->
+    <!-- 圖片 Gallery Modal -->
     <div id="gallery-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full p-4 space-y-4">
             <div class="flex justify-between items-center border-b pb-2">
                 <h3 id="gallery-title" class="text-sm font-bold text-slate-800">🖼️ 零件照片</h3>
                 <button onclick="closeGalleryModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold px-2">&times;</button>
             </div>
-            <!-- 圖片容器 -->
-            <div id="gallery-container" class="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-[75vh] overflow-y-auto p-2">
-            </div>
+            <div id="gallery-container" class="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-[75vh] overflow-y-auto p-2"></div>
         </div>
     </div>
 
-    <!-- 單張大圖放大檢視 Modal -->
+    <!-- 大圖放大檢視 Modal -->
     <div id="image-modal" class="fixed inset-0 bg-slate-900/90 hidden items-center justify-center p-4 z-[60]" onclick="closeImageModal()">
         <img id="image-modal-img" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain">
     </div>
@@ -321,16 +279,122 @@
         document.addEventListener('DOMContentLoaded', () => {
             initVehicleDropdowns();
             initEnterKeyNavigation();
+            // 初始化新增零件頁面的第一組車型輸入框
+            addVehicleRow('add-vehicles-container', 'add');
         });
+
+        // 建立單組車型 HTML 輸入框元件
+        function createVehicleRowHTML(prefix, v = {}) {
+            return `
+                <div class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
+                    <button type="button" onclick="removeVehicleRow(this)" class="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-50 text-xs font-bold px-2 py-1 rounded border border-transparent hover:border-red-200 transition">
+                        🗑️ 刪除
+                    </button>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pr-14">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 *</label>
+                            <input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm" required placeholder="例: BMW" value="${v.brand || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">底盤/車型 *</label>
+                            <input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm" required placeholder="例: E36" value="${v.model || ''}">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label>
+                            <input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm" required placeholder="例: 1992" value="${v.start_year || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label>
+                            <input type="number" min="1" max="12" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm" placeholder="1-12" value="${v.start_month || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label>
+                            <input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm" required placeholder="例: 1998" value="${v.end_year || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label>
+                            <input type="number" min="1" max="12" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm" placeholder="1-12" value="${v.end_month || ''}">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addVehicleRow(containerId, prefix, vData = {}) {
+            const container = document.getElementById(containerId);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = createVehicleRowHTML(prefix, vData);
+            container.appendChild(wrapper.firstElementChild);
+        }
+
+        function removeVehicleRow(btn) {
+            const container = btn.closest('.vehicle-row').parentElement;
+            if (container.querySelectorAll('.vehicle-row').length <= 1) {
+                alert('⚠️ 至少需要保留一組通用車型資料！');
+                return;
+            }
+            btn.closest('.vehicle-row').remove();
+        }
+
+        // 收集並批次向 Supabase 寫入/比對多台車型
+        async function getOrCreateVehicleIds(containerId, prefix) {
+            const container = document.getElementById(containerId);
+            const rows = container.querySelectorAll('.vehicle-row');
+            const vehicleIds = [];
+
+            for (const row of rows) {
+                const brand = row.querySelector(`.${prefix}-v-brand`).value.trim();
+                const model = row.querySelector(`.${prefix}-v-model`).value.trim();
+                const startYear = parseInt(row.querySelector(`.${prefix}-v-start`).value);
+                const startMonth = parseInt(row.querySelector(`.${prefix}-v-start-m`).value) || null;
+                const endYear = parseInt(row.querySelector(`.${prefix}-v-end`).value);
+                const endMonth = parseInt(row.querySelector(`.${prefix}-v-end-m`).value) || null;
+
+                if (!brand || !model || isNaN(startYear) || isNaN(endYear)) continue;
+
+                // 檢查車型資料庫中是否已存在同規格車型
+                const { data: existingVehicle } = await _supabase
+                    .from('vehicles')
+                    .select('id')
+                    .eq('brand', brand)
+                    .eq('model', model)
+                    .eq('start_year', startYear)
+                    .eq('end_year', endYear)
+                    .maybeSingle();
+
+                if (existingVehicle) {
+                    vehicleIds.push(existingVehicle.id);
+                } else {
+                    const { data: newVehicle, error: vError } = await _supabase
+                        .from('vehicles')
+                        .insert([{
+                            brand: brand,
+                            model: model,
+                            start_year: startYear,
+                            start_month: startMonth,
+                            end_year: endYear,
+                            end_month: endMonth
+                        }])
+                        .select();
+
+                    if (vError) throw vError;
+                    vehicleIds.push(newVehicle[0].id);
+                }
+            }
+
+            return [...new Set(vehicleIds)]; // 去除重複 ID
+        }
 
         function initEnterKeyNavigation() {
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     const activeEl = document.activeElement;
-                    
                     if (activeEl && activeEl.tagName === 'INPUT' && activeEl.type !== 'button' && activeEl.type !== 'submit' && activeEl.type !== 'file') {
                         e.preventDefault();
-
                         const container = activeEl.closest('form') || activeEl.closest('#tab-search');
                         if (!container) return;
 
@@ -339,7 +403,6 @@
                         ).filter(el => el.offsetWidth > 0 || el.offsetHeight > 0);
 
                         const currentIndex = focusables.indexOf(activeEl);
-
                         if (currentIndex > -1 && currentIndex < focusables.length - 1) {
                             const nextEl = focusables[currentIndex + 1];
                             nextEl.focus();
@@ -357,9 +420,7 @@
             document.getElementById('search-model').value = '';
             document.getElementById('search-year').value = '';
             document.getElementById('search-part').value = '';
-
             updateModelDatalist('');
-
             document.getElementById('results').innerHTML = '<p class="text-slate-400 text-sm text-center py-6">請輸入條件並點擊上方按鈕。</p>';
             currentResultsCache = [];
         }
@@ -367,14 +428,9 @@
         function previewImages(event, containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-            const files = Array.from(event.target.files);
+            const files = Array.from(event.target.files).slice(0, 3);
 
-            if (files.length > 3) {
-                alert('⚠️ 一個零件最多只能上傳 3 張照片！已自動選取前 3 張。');
-            }
-
-            const selectedFiles = files.slice(0, 3);
-            selectedFiles.forEach(file => {
+            files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = document.createElement('img');
@@ -387,7 +443,6 @@
             });
         }
 
-        // 上傳照片並防錯提示
         async function uploadImages(fileInputId) {
             const fileInput = document.getElementById(fileInputId);
             const files = Array.from(fileInput.files).slice(0, 3);
@@ -406,8 +461,7 @@
                     .upload(filePath, file);
 
                 if (uploadError) {
-                    alert(`⚠️ 第 ${i + 1} 張圖片上傳失敗：${uploadError.message}\n請確認 Supabase Storage Policy 是否已開放權限。`);
-                    console.error('圖片上傳失敗原因:', uploadError);
+                    console.error('圖片上傳失敗:', uploadError);
                     continue;
                 }
 
@@ -430,33 +484,27 @@
                 if (error) throw error;
 
                 allVehiclesCache = data || [];
-
                 const uniqueBrands = [...new Set(allVehiclesCache.map(v => v.brand).filter(Boolean))];
-                const brandDatalist = document.getElementById('brand-list');
-                brandDatalist.innerHTML = uniqueBrands.map(b => `<option value="${b}">`).join('');
-
+                document.getElementById('brand-list').innerHTML = uniqueBrands.map(b => `<option value="${b}">`).join('');
                 updateModelDatalist();
             } catch (err) {
-                console.error('初始化車型下拉選單失敗:', err);
+                console.error('初始化車型選單失敗:', err);
             }
         }
 
         function handleBrandChange() {
             const selectedBrand = document.getElementById('search-brand').value.trim().toLowerCase();
-            const modelInput = document.getElementById('search-model');
-            modelInput.value = '';
+            document.getElementById('search-model').value = '';
             updateModelDatalist(selectedBrand);
         }
 
         function updateModelDatalist(filterBrand = '') {
-            const modelDatalist = document.getElementById('model-list');
-            let filteredVehicles = allVehiclesCache;
+            let filtered = allVehiclesCache;
             if (filterBrand) {
-                filteredVehicles = allVehiclesCache.filter(v => v.brand.toLowerCase() === filterBrand);
+                filtered = allVehiclesCache.filter(v => v.brand.toLowerCase() === filterBrand);
             }
-
-            const uniqueModels = [...new Set(filteredVehicles.map(v => v.model).filter(Boolean))];
-            modelDatalist.innerHTML = uniqueModels.map(m => `<option value="${m}">`).join('');
+            const uniqueModels = [...new Set(filtered.map(v => v.model).filter(Boolean))];
+            document.getElementById('model-list').innerHTML = uniqueModels.map(m => `<option value="${m}">`).join('');
         }
 
         function switchTab(tab) {
@@ -474,11 +522,9 @@
         function formatYearMonth(year, month) {
             if (!year) return '';
             if (!month) return `${year}`;
-            const formattedMonth = String(month).padStart(2, '0');
-            return `${year}/${formattedMonth}`;
+            return `${year}/${String(month).padStart(2, '0')}`;
         }
 
-        // 工具函式：格式化長寬高
         function formatDimensions(l, w, h) {
             if (l !== null && l !== undefined && w !== null && w !== undefined && h !== null && h !== undefined) {
                 return `${l} × ${w} × ${h} mm`;
@@ -499,37 +545,14 @@
 
             resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在向 Supabase 檢索資料...</p>';
 
-            const keywords = rawPartInput
-                .split(/[,，\s\n、]+/)
-                .map(k => k.trim())
-                .filter(k => k.length > 0);
+            const keywords = rawPartInput.split(/[,，\s\n、]+/).map(k => k.trim()).filter(k => k.length > 0);
 
-            let query = _supabase
-                .from('parts')
-                .select(`
-                    id,
-                    part_name,
-                    brand_name,
-                    part_number,
-                    price,
-                    remarks,
-                    length,
-                    width,
-                    height,
-                    image_1,
-                    image_2,
-                    image_3,
-                    part_vehicles (
-                        vehicles (
-                            brand,
-                            model,
-                            start_year,
-                            start_month,
-                            end_year,
-                            end_month
-                        )
-                    )
-                `);
+            let query = _supabase.from('parts').select(`
+                id, part_name, brand_name, part_number, price, remarks, length, width, height, image_1, image_2, image_3,
+                part_vehicles (
+                    vehicles ( brand, model, start_year, start_month, end_year, end_month )
+                )
+            `);
 
             if (keywords.length > 0) {
                 const orConditions = keywords.map(k => `part_name.ilike.%${k}%`).join(',');
@@ -551,7 +574,6 @@
                     const matchBrand = !searchBrand || v.brand.toLowerCase().includes(searchBrand);
                     const matchModel = !searchModel || v.model.toLowerCase().includes(searchModel);
                     const matchYear = !year || (year >= v.start_year && year <= v.end_year);
-                    
                     return matchBrand && matchModel && matchYear;
                 });
             });
@@ -559,7 +581,6 @@
             renderResults(filteredData);
         }
 
-        // 渲染查詢結果 (加入尺寸顯示)
         function renderResults(list) {
             currentResultsCache = list;
             const resultsContainer = document.getElementById('results');
@@ -589,13 +610,9 @@
                                 <div class="flex gap-1.5 justify-end pt-1">
                                     ${images.length > 0 ? `
                                         <button onclick="openGalleryModal(${item.id})" class="inline-flex items-center gap-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2 py-1 rounded border border-emerald-200 transition font-medium">
-                                            🖼️ 查看圖片 (${images.length})
+                                            🖼️ 照片 (${images.length})
                                         </button>
-                                    ` : `
-                                        <span class="inline-flex items-center gap-1 text-xs bg-slate-50 text-slate-400 px-2 py-1 rounded border border-slate-100">
-                                            🚫 無圖片
-                                        </span>
-                                    `}
+                                    ` : ''}
                                     <button onclick="openEditModalById(${item.id})" class="inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-blue-50 text-blue-600 hover:text-blue-700 px-2 py-1 rounded border border-slate-200 transition font-medium">
                                         ✏️ 編輯
                                     </button>
@@ -619,7 +636,7 @@
                         ` : ''}
 
                         <div class="border-t border-slate-100 pt-2.5">
-                            <span class="text-[11px] font-bold text-slate-400 block mb-1.5">🔗 通用車型清單：</span>
+                            <span class="text-[11px] font-bold text-slate-400 block mb-1.5">🔗 通用車型清單 (${allVehicles.length} 台)：</span>
                             <div class="flex flex-wrap gap-1.5">
                                 ${allVehicles.map(v => `
                                     <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
@@ -633,7 +650,6 @@
             }).join('');
         }
 
-        // 開啟圖片相簿 Modal
         function openGalleryModal(id) {
             const item = currentResultsCache.find(p => p.id === id);
             if (!item) return;
@@ -683,7 +699,6 @@
             document.getElementById('edit-price').value = item.price !== null ? item.price : '';
             document.getElementById('edit-remarks').value = item.remarks || '';
 
-            // 填入尺寸欄位
             document.getElementById('edit-length').value = item.length !== null && item.length !== undefined ? item.length : '';
             document.getElementById('edit-width').value = item.width !== null && item.width !== undefined ? item.width : '';
             document.getElementById('edit-height').value = item.height !== null && item.height !== undefined ? item.height : '';
@@ -699,22 +714,15 @@
                 previewContainer.appendChild(img);
             });
 
+            // 渲染多組編輯車型
+            const editVehiclesContainer = document.getElementById('edit-vehicles-container');
+            editVehiclesContainer.innerHTML = '';
             const vehicles = item.part_vehicles.map(pv => pv.vehicles).filter(Boolean);
+
             if (vehicles.length > 0) {
-                const firstVehicle = vehicles[0];
-                document.getElementById('edit-v-brand').value = firstVehicle.brand || '';
-                document.getElementById('edit-v-model').value = firstVehicle.model || '';
-                document.getElementById('edit-v-start').value = firstVehicle.start_year || '';
-                document.getElementById('edit-v-start-m').value = firstVehicle.start_month || '';
-                document.getElementById('edit-v-end').value = firstVehicle.end_year || '';
-                document.getElementById('edit-v-end-m').value = firstVehicle.end_month || '';
+                vehicles.forEach(v => addVehicleRow('edit-vehicles-container', 'edit', v));
             } else {
-                document.getElementById('edit-v-brand').value = '';
-                document.getElementById('edit-v-model').value = '';
-                document.getElementById('edit-v-start').value = '';
-                document.getElementById('edit-v-start-m').value = '';
-                document.getElementById('edit-v-end').value = '';
-                document.getElementById('edit-v-end-m').value = '';
+                addVehicleRow('edit-vehicles-container', 'edit');
             }
 
             const modal = document.getElementById('edit-modal');
@@ -733,7 +741,7 @@
 
             const submitBtn = document.getElementById('edit-submit-btn');
             submitBtn.disabled = true;
-            submitBtn.innerText = '⏳ 正在更新與上傳圖片...';
+            submitBtn.innerText = '⏳ 正在更新與同步車型...';
 
             const id = document.getElementById('edit-id').value;
             const partName = document.getElementById('edit-part-name').value.trim();
@@ -742,17 +750,9 @@
             const price = parseFloat(document.getElementById('edit-price').value) || null;
             const remarks = document.getElementById('edit-remarks').value.trim() || null;
 
-            // 讀取編輯尺寸
             const length = document.getElementById('edit-length').value ? parseFloat(document.getElementById('edit-length').value) : null;
             const width = document.getElementById('edit-width').value ? parseFloat(document.getElementById('edit-width').value) : null;
             const height = document.getElementById('edit-height').value ? parseFloat(document.getElementById('edit-height').value) : null;
-
-            const vBrand = document.getElementById('edit-v-brand').value.trim();
-            const vModel = document.getElementById('edit-v-model').value.trim();
-            const vStart = parseInt(document.getElementById('edit-v-start').value);
-            const vStartM = parseInt(document.getElementById('edit-v-start-m').value) || null;
-            const vEnd = parseInt(document.getElementById('edit-v-end').value);
-            const vEndM = parseInt(document.getElementById('edit-v-end-m').value) || null;
 
             try {
                 const [img1, img2, img3] = await uploadImages('edit-images');
@@ -774,57 +774,23 @@
                     updatePayload.image_3 = img3;
                 }
 
-                const { error: partError } = await _supabase
-                    .from('parts')
-                    .update(updatePayload)
-                    .eq('id', id);
-
+                // 1. 更新零件主檔
+                const { error: partError } = await _supabase.from('parts').update(updatePayload).eq('id', id);
                 if (partError) throw partError;
 
-                let vehicleId;
-                const { data: existingVehicle } = await _supabase
-                    .from('vehicles')
-                    .select('id')
-                    .eq('brand', vBrand)
-                    .eq('model', vModel)
-                    .eq('start_year', vStart)
-                    .eq('end_year', vEnd)
-                    .maybeSingle();
+                // 2. 獲取編輯視窗中所有車型的 ID 陣列
+                const vehicleIds = await getOrCreateVehicleIds('edit-vehicles-container', 'edit');
 
-                if (existingVehicle) {
-                    vehicleId = existingVehicle.id;
-                } else {
-                    const { data: newVehicle, error: vError } = await _supabase
-                        .from('vehicles')
-                        .insert([{
-                            brand: vBrand,
-                            model: vModel,
-                            start_year: vStart,
-                            start_month: vStartM,
-                            end_year: vEnd,
-                            end_month: vEndM
-                        }])
-                        .select();
+                // 3. 刪除舊有對應關聯，並重構新的多車型關聯
+                await _supabase.from('part_vehicles').delete().eq('part_id', id);
 
-                    if (vError) throw vError;
-                    vehicleId = newVehicle[0].id;
+                if (vehicleIds.length > 0) {
+                    const mappings = vehicleIds.map(vId => ({ part_id: id, vehicle_id: vId }));
+                    const { error: mapError } = await _supabase.from('part_vehicles').insert(mappings);
+                    if (mapError) throw mapError;
                 }
 
-                await _supabase
-                    .from('part_vehicles')
-                    .delete()
-                    .eq('part_id', id);
-
-                const { error: mapError } = await _supabase
-                    .from('part_vehicles')
-                    .insert([{
-                        part_id: id,
-                        vehicle_id: vehicleId
-                    }]);
-
-                if (mapError) throw mapError;
-
-                alert('✅ 零件與車型資料已成功更新！');
+                alert('✅ 零件與多台通用車型資料更新成功！');
                 closeEditModal();
                 initVehicleDropdowns();
                 searchParts();
@@ -841,7 +807,7 @@
 
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = true;
-            submitBtn.innerText = '⏳ 正在上傳照片並同步至 Supabase...';
+            submitBtn.innerText = '⏳ 正在建立零件與關聯車型...';
 
             const partName = document.getElementById('add-part-name').value.trim();
             const brandName = document.getElementById('add-brand-name').value.trim();
@@ -849,21 +815,14 @@
             const price = parseFloat(document.getElementById('add-price').value) || null;
             const remarks = document.getElementById('add-remarks').value.trim() || null;
 
-            // 讀取新增尺寸
             const length = document.getElementById('add-length').value ? parseFloat(document.getElementById('add-length').value) : null;
             const width = document.getElementById('add-width').value ? parseFloat(document.getElementById('add-width').value) : null;
             const height = document.getElementById('add-height').value ? parseFloat(document.getElementById('add-height').value) : null;
 
-            const vehicleBrand = document.getElementById('add-v-brand').value.trim();
-            const vehicleModel = document.getElementById('add-v-model').value.trim();
-            const startYear = parseInt(document.getElementById('add-v-start').value);
-            const startMonth = parseInt(document.getElementById('add-v-start-m').value) || null;
-            const endYear = parseInt(document.getElementById('add-v-end').value);
-            const endMonth = parseInt(document.getElementById('add-v-end-m').value) || null;
-
             try {
                 const [img1, img2, img3] = await uploadImages('add-images');
 
+                // 1. 新增零件主檔
                 const { data: partData, error: partError } = await _supabase
                     .from('parts')
                     .insert([{
@@ -884,47 +843,21 @@
                 if (partError) throw partError;
                 const newPartId = partData[0].id;
 
-                let vehicleId;
-                const { data: existingVehicle } = await _supabase
-                    .from('vehicles')
-                    .select('id')
-                    .eq('brand', vehicleBrand)
-                    .eq('model', vehicleModel)
-                    .eq('start_year', startYear)
-                    .eq('end_year', endYear)
-                    .maybeSingle();
+                // 2. 獲取新增區域中填寫的所有車型 ID
+                const vehicleIds = await getOrCreateVehicleIds('add-vehicles-container', 'add');
 
-                if (existingVehicle) {
-                    vehicleId = existingVehicle.id;
-                } else {
-                    const { data: newVehicle, error: vError } = await _supabase
-                        .from('vehicles')
-                        .insert([{
-                            brand: vehicleBrand,
-                            model: vehicleModel,
-                            start_year: startYear,
-                            start_month: startMonth,
-                            end_year: endYear,
-                            end_month: endMonth
-                        }])
-                        .select();
-
-                    if (vError) throw vError;
-                    vehicleId = newVehicle[0].id;
+                // 3. 綁定多車型關聯
+                if (vehicleIds.length > 0) {
+                    const mappings = vehicleIds.map(vId => ({ part_id: newPartId, vehicle_id: vId }));
+                    const { error: mapError } = await _supabase.from('part_vehicles').insert(mappings);
+                    if (mapError) throw mapError;
                 }
 
-                const { error: mapError } = await _supabase
-                    .from('part_vehicles')
-                    .insert([{
-                        part_id: newPartId,
-                        vehicle_id: vehicleId
-                    }]);
-
-                if (mapError) throw mapError;
-
-                alert('✅ 資料儲存成功！已實時同步至 Supabase。');
+                alert('✅ 零件與通用車型資料儲存成功！');
                 document.getElementById('add-part-form').reset();
                 document.getElementById('add-preview-container').innerHTML = '';
+                document.getElementById('add-vehicles-container').innerHTML = '';
+                addVehicleRow('add-vehicles-container', 'add'); // 重置為一組空白車型輸入框
                 
                 initVehicleDropdowns();
                 switchTab('search');
