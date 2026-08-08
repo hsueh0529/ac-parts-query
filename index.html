@@ -104,6 +104,25 @@
                         </div>
                     </div>
 
+                    <!-- 外觀尺寸 (長寬高) 新增區塊 -->
+                    <div class="bg-white p-3 rounded-lg border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-700 mb-2">📐 外觀尺寸 (選填，單位：mm)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">長 (Length)</label>
+                                <input type="number" id="add-length" step="0.1" placeholder="例: 150" class="w-full border rounded-lg p-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">寬 (Width)</label>
+                                <input type="number" id="add-width" step="0.1" placeholder="例: 100" class="w-full border rounded-lg p-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">高 (Height)</label>
+                                <input type="number" id="add-height" step="0.1" placeholder="例: 50" class="w-full border rounded-lg p-2 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">備註說明</label>
                         <input type="text" id="add-remarks" placeholder="例如: 附帶腳架、需搭配指定冷媒" class="w-full border rounded-lg p-2 text-sm">
@@ -194,6 +213,25 @@
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">參考前價 (NT$)</label>
                             <input type="number" id="edit-price" class="w-full border rounded-lg p-2 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- 編輯外觀尺寸 (長寬高) -->
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">📐 外觀尺寸 (mm)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">長</label>
+                                <input type="number" id="edit-length" step="0.1" class="w-full border rounded-lg p-1.5 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">寬</label>
+                                <input type="number" id="edit-width" step="0.1" class="w-full border rounded-lg p-1.5 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">高</label>
+                                <input type="number" id="edit-height" step="0.1" class="w-full border rounded-lg p-1.5 text-sm">
+                            </div>
                         </div>
                     </div>
 
@@ -440,6 +478,18 @@
             return `${year}/${formattedMonth}`;
         }
 
+        // 工具函式：格式化長寬高
+        function formatDimensions(l, w, h) {
+            if (l !== null && l !== undefined && w !== null && w !== undefined && h !== null && h !== undefined) {
+                return `${l} × ${w} × ${h} mm`;
+            }
+            const parts = [];
+            if (l !== null && l !== undefined) parts.push(`長:${l}`);
+            if (w !== null && w !== undefined) parts.push(`寬:${w}`);
+            if (h !== null && h !== undefined) parts.push(`高:${h}`);
+            return parts.length > 0 ? parts.join(' / ') + ' mm' : null;
+        }
+
         async function searchParts() {
             const searchBrand = document.getElementById('search-brand').value.trim().toLowerCase();
             const searchModel = document.getElementById('search-model').value.trim().toLowerCase();
@@ -463,6 +513,9 @@
                     part_number,
                     price,
                     remarks,
+                    length,
+                    width,
+                    height,
                     image_1,
                     image_2,
                     image_3,
@@ -506,7 +559,7 @@
             renderResults(filteredData);
         }
 
-        // 渲染查詢結果 (加入明確圖片狀態與按鈕)
+        // 渲染查詢結果 (加入尺寸顯示)
         function renderResults(list) {
             currentResultsCache = list;
             const resultsContainer = document.getElementById('results');
@@ -519,6 +572,7 @@
             resultsContainer.innerHTML = list.map(item => {
                 const allVehicles = item.part_vehicles.map(pv => pv.vehicles).filter(Boolean);
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
+                const dimText = formatDimensions(item.length, item.width, item.height);
                 
                 return `
                     <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-300 transition">
@@ -549,8 +603,13 @@
                             </div>
                         </div>
 
-                        <div class="text-xs text-slate-600 mb-2">
-                            料號：<span class="font-mono bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-800 border">${item.part_number ? item.part_number : '未提供'}</span>
+                        <div class="text-xs text-slate-600 mb-2 flex flex-wrap gap-2 items-center">
+                            <span>料號：<span class="font-mono bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-800 border">${item.part_number ? item.part_number : '未提供'}</span></span>
+                            ${dimText ? `
+                                <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-mono text-[11px] font-semibold">
+                                    📐 ${dimText}
+                                </span>
+                            ` : ''}
                         </div>
 
                         ${item.remarks ? `
@@ -624,6 +683,11 @@
             document.getElementById('edit-price').value = item.price !== null ? item.price : '';
             document.getElementById('edit-remarks').value = item.remarks || '';
 
+            // 填入尺寸欄位
+            document.getElementById('edit-length').value = item.length !== null && item.length !== undefined ? item.length : '';
+            document.getElementById('edit-width').value = item.width !== null && item.width !== undefined ? item.width : '';
+            document.getElementById('edit-height').value = item.height !== null && item.height !== undefined ? item.height : '';
+
             const previewContainer = document.getElementById('edit-preview-container');
             previewContainer.innerHTML = '';
             const existingImages = [item.image_1, item.image_2, item.image_3].filter(Boolean);
@@ -678,6 +742,11 @@
             const price = parseFloat(document.getElementById('edit-price').value) || null;
             const remarks = document.getElementById('edit-remarks').value.trim() || null;
 
+            // 讀取編輯尺寸
+            const length = document.getElementById('edit-length').value ? parseFloat(document.getElementById('edit-length').value) : null;
+            const width = document.getElementById('edit-width').value ? parseFloat(document.getElementById('edit-width').value) : null;
+            const height = document.getElementById('edit-height').value ? parseFloat(document.getElementById('edit-height').value) : null;
+
             const vBrand = document.getElementById('edit-v-brand').value.trim();
             const vModel = document.getElementById('edit-v-model').value.trim();
             const vStart = parseInt(document.getElementById('edit-v-start').value);
@@ -693,7 +762,10 @@
                     brand_name: brandName,
                     part_number: partNumber,
                     price: price,
-                    remarks: remarks
+                    remarks: remarks,
+                    length: length,
+                    width: width,
+                    height: height
                 };
 
                 if (img1 || img2 || img3) {
@@ -777,6 +849,11 @@
             const price = parseFloat(document.getElementById('add-price').value) || null;
             const remarks = document.getElementById('add-remarks').value.trim() || null;
 
+            // 讀取新增尺寸
+            const length = document.getElementById('add-length').value ? parseFloat(document.getElementById('add-length').value) : null;
+            const width = document.getElementById('add-width').value ? parseFloat(document.getElementById('add-width').value) : null;
+            const height = document.getElementById('add-height').value ? parseFloat(document.getElementById('add-height').value) : null;
+
             const vehicleBrand = document.getElementById('add-v-brand').value.trim();
             const vehicleModel = document.getElementById('add-v-model').value.trim();
             const startYear = parseInt(document.getElementById('add-v-start').value);
@@ -795,6 +872,9 @@
                         part_number: partNumber,
                         price: price,
                         remarks: remarks,
+                        length: length,
+                        width: width,
+                        height: height,
                         image_1: img1,
                         image_2: img2,
                         image_3: img3
