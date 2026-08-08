@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汽車空調零件通用資料庫</title>
+    <title>汽車空調零件通用資料庫 (整合 VIN 解碼)</title>
     <!-- 引入 Tailwind CSS 進行視覺排版 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Supabase 官方 SDK -->
@@ -16,33 +16,55 @@
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
             <span class="flex items-center gap-2">🚗 汽車空調零件通用資料庫</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步 & VIN API 連線中
             </span>
         </h1>
 
         <!-- 功能頁籤切換按鈕 -->
         <div class="flex gap-4 border-b mb-6">
             <button id="tab-search-btn" onclick="switchTab('search')" class="pb-2 border-b-2 border-blue-600 font-semibold text-blue-600 transition">
-                🔍 零件與價格查詢
+                🔍 零件與價格查詢 (含 VIN 解碼)
             </button>
             <button id="tab-add-btn" onclick="switchTab('add')" class="pb-2 font-semibold text-slate-500 hover:text-slate-800 transition">
                 ➕ 建立新零件資料
             </button>
         </div>
 
-        <!-- ================= 1. 查詢分頁 ================= -->
+        <!-- ================= 1. 查詢分頁 (整合 VIN 功能) ================= -->
         <div id="tab-search" class="block">
+            
+            <!-- ⚡ VIN 17位車身碼快速解析專區 -->
+            <div class="mb-5 bg-gradient-to-r from-blue-900 to-indigo-900 p-4 rounded-xl text-white shadow-md">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-blue-200">
+                        ⚡ VIN 車身碼一鍵解析（自動帶入車款與年份）
+                    </label>
+                    <span class="text-[10px] bg-blue-800 text-blue-200 px-2 py-0.5 rounded border border-blue-700">NHTSA vPIC API 串接</span>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-2">
+                    <input type="text" id="search-vin" maxlength="17" placeholder="請輸入 17 位 VIN 車身碼 (例如: WBA3A5C50DF...)" 
+                           class="flex-1 border-0 rounded-lg p-2.5 text-sm text-slate-900 font-mono tracking-wider focus:ring-2 focus:ring-emerald-400 outline-none uppercase placeholder:text-slate-400">
+                    <button onclick="parseAndSearchVIN()" class="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-bold px-5 py-2.5 rounded-lg transition flex items-center justify-center gap-1.5 whitespace-nowrap text-sm shadow">
+                        🔍 解析 VIN 並比對零件
+                    </button>
+                </div>
+                
+                <!-- 解析狀態訊息提示區 -->
+                <div id="vin-status" class="hidden"></div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <!-- 品牌模糊搜尋選單 -->
+                <!-- 品牌選單 -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌</label>
                     <input type="text" id="search-brand" list="brand-list" placeholder="選擇或輸入品牌..." oninput="handleBrandChange()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     <datalist id="brand-list"></datalist>
                 </div>
 
-                <!-- 車型 / 底盤號 / VIN -->
+                <!-- 車型 / 底盤號 -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">車型 / 底盤號 / VIN</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">車型 / 底盤號</label>
                     <input type="text" id="search-model" list="model-list" placeholder="例如: E36 / W210..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     <datalist id="model-list"></datalist>
                 </div>
@@ -53,7 +75,7 @@
                     <input type="number" id="search-year" placeholder="例如: 1995" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
-                <!-- 零件名稱與料號 (多關鍵字) -->
+                <!-- 零件名稱與料號 -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">零件 / 料號 / 廠商 (逗號分隔)</label>
                     <input type="text" id="search-part" placeholder="例如: 壓縮機, DCP05001" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -63,16 +85,16 @@
             <!-- 操作按鈕列 -->
             <div class="flex flex-col md:flex-row gap-3 mb-6">
                 <button onclick="searchParts()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1">
-                    🔍 執行批次查詢
+                    🔍 執行條件查詢
                 </button>
                 <button onclick="clearSearchInputs()" class="bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
-                    🧹 清除條件
+                    🧹 清除條件與 VIN
                 </button>
             </div>
 
             <!-- 查詢結果顯示區域 -->
             <div id="results" class="space-y-4">
-                <p class="text-slate-400 text-sm text-center py-6">請輸入條件並點擊上方按鈕。</p>
+                <p class="text-slate-400 text-sm text-center py-6">請輸入條件或 VIN 碼並點擊上方按鈕。</p>
             </div>
         </div>
 
@@ -149,7 +171,7 @@
                         <input type="text" id="add-remarks" placeholder="例如: 附帶腳架、冷媒規格 R134a" class="w-full border rounded-lg p-2 text-sm">
                     </div>
 
-                    <!-- 新增零件照片 -->
+                    <!-- 照片上傳 -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">零件照片 (最多 3 張照片)</label>
                         <input type="file" id="add-images" accept="image/*" multiple onchange="previewImages(event, 'add-preview-container')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
@@ -157,7 +179,7 @@
                     </div>
                 </div>
 
-                <!-- 通用車型資訊 (可動態新增多組) -->
+                <!-- 通用車型資訊 -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <div class="flex justify-between items-center border-b pb-2">
                         <h2 class="font-bold text-sm text-slate-700">🚘 綁定通用車型 (可填寫多台)</h2>
@@ -165,11 +187,7 @@
                             ➕ 新增一台車型
                         </button>
                     </div>
-                    
-                    <!-- 動態車型列表容器 -->
-                    <div id="add-vehicles-container" class="space-y-3">
-                        <!-- 由 JavaScript 自動生成 -->
-                    </div>
+                    <div id="add-vehicles-container" class="space-y-3"></div>
                 </div>
 
                 <button type="submit" id="submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium py-3 rounded-xl shadow transition">
@@ -180,7 +198,7 @@
 
     </div>
 
-    <!-- ================= 3. 編輯零件彈出視窗 (Modal) ================= -->
+    <!-- ================= 3. 編輯零件 Modal ================= -->
     <div id="edit-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
@@ -191,7 +209,6 @@
             <form id="edit-part-form" onsubmit="handleSaveEdit(event)" class="space-y-4">
                 <input type="hidden" id="edit-id">
                 
-                <!-- 零件資訊區塊 -->
                 <div class="space-y-3">
                     <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">零件資訊</h4>
                     <div>
@@ -215,7 +232,6 @@
                         <input type="text" id="edit-supplier-name" class="w-full border rounded-lg p-2 text-sm">
                     </div>
 
-                    <!-- 編輯價格與日期 -->
                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
                         <label class="block text-xs font-bold text-slate-700">💵 價格與成本紀錄</label>
                         <div class="grid grid-cols-3 gap-2">
@@ -234,7 +250,6 @@
                         </div>
                     </div>
 
-                    <!-- 編輯外觀尺寸 -->
                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">📐 外觀尺寸 (mm)</label>
                         <div class="grid grid-cols-3 gap-2">
@@ -258,15 +273,13 @@
                         <input type="text" id="edit-remarks" class="w-full border rounded-lg p-2 text-sm">
                     </div>
 
-                    <!-- 編輯圖片區塊 -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">更新零件照片 (上傳新照片將取代舊照片)</label>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">更新零件照片</label>
                         <input type="file" id="edit-images" accept="image/*" multiple onchange="previewImages(event, 'edit-preview-container')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                         <div id="edit-preview-container" class="flex gap-2 mt-3 overflow-x-auto"></div>
                     </div>
                 </div>
 
-                <!-- 適用車型動態區塊 -->
                 <div class="space-y-3 border-t pt-3">
                     <div class="flex justify-between items-center">
                         <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">🚘 適用車型資料 (多台車)</h4>
@@ -274,8 +287,6 @@
                             ➕ 新增一台車型
                         </button>
                     </div>
-
-                    <!-- 編輯頁面的動態車型列表容器 -->
                     <div id="edit-vehicles-container" class="space-y-3"></div>
                 </div>
 
@@ -287,7 +298,7 @@
         </div>
     </div>
 
-    <!-- 圖片 Gallery Modal -->
+    <!-- 圖片 Modal -->
     <div id="gallery-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full p-4 space-y-4">
             <div class="flex justify-between items-center border-b pb-2">
@@ -298,7 +309,7 @@
         </div>
     </div>
 
-    <!-- 大圖放大檢視 Modal -->
+    <!-- 大圖放大 View -->
     <div id="image-modal" class="fixed inset-0 bg-slate-900/90 hidden items-center justify-center p-4 z-[60]" onclick="closeImageModal()">
         <img id="image-modal-img" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain">
     </div>
@@ -319,6 +330,89 @@
             initEnterKeyNavigation();
             addVehicleRow('add-vehicles-container', 'add');
         });
+
+        /* ================= ⚡ VIN 車身碼線上解析與搜尋邏輯 ================= */
+        async function parseAndSearchVIN() {
+            const vinInput = document.getElementById('search-vin').value.trim().toUpperCase();
+            const vinStatus = document.getElementById('vin-status');
+
+            if (!vinInput || vinInput.length !== 17) {
+                alert('⚠️ 請輸入正確的 17 位 VIN 車身碼！');
+                return;
+            }
+
+            vinStatus.classList.remove('hidden');
+            vinStatus.className = 'block text-xs text-blue-200 bg-blue-950/70 p-3 rounded-lg border border-blue-700/80 mt-3 font-medium animate-pulse';
+            vinStatus.innerHTML = '⏳ 正在連線 NHTSA vPIC 國際車身碼資料庫進行解碼...';
+
+            try {
+                // 串接美國 NHTSA 免費官方 API (支援全球主要車廠)
+                const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vinInput}?format=json`);
+                if (!response.ok) throw new Error('API 連線回應異常');
+                
+                const data = await response.json();
+                
+                if (data && data.Results && data.Results.length > 0) {
+                    const res = data.Results[0];
+                    const make = (res.Make || '').trim();
+                    const model = (res.Model || '').trim();
+                    const year = (res.ModelYear || '').trim();
+                    const series = (res.Series || '').trim();
+                    const displacement = res.DisplacementL ? `${res.DisplacementL}L` : '';
+
+                    if (!make && !model && !year) {
+                        vinStatus.className = 'block text-xs text-amber-300 bg-amber-950/80 p-3 rounded-lg border border-amber-700/80 mt-3 font-medium';
+                        vinStatus.innerHTML = '⚠️ 未能從 VIN 解析出明確車款資料，請檢查號碼是否正確或手動選擇條件。';
+                        return;
+                    }
+
+                    // 1. 自動把解析出來的品牌、車型、年份寫入對應搜尋欄位
+                    if (make) document.getElementById('search-brand').value = make;
+                    
+                    // 觸發品牌變更以刷新車型選單
+                    handleBrandChange();
+
+                    if (model) {
+                        // 若解析出具體 model，優先帶入；若有 Series (如 3 Series)，兼顧呈現
+                        document.getElementById('search-model').value = model;
+                    } else if (series) {
+                        document.getElementById('search-model').value = series;
+                    }
+
+                    if (year) document.getElementById('search-year').value = year;
+
+                    // 2. 顯示解析成功訊息
+                    vinStatus.classList.remove('animate-pulse');
+                    vinStatus.className = 'block text-xs text-emerald-200 bg-emerald-950/80 p-3 rounded-lg border border-emerald-700/80 mt-3 font-medium';
+                    vinStatus.innerHTML = `✅ <b>VIN 解析成功：</b> ${year} ${make} ${model} ${series ? '(' + series + ')' : ''} ${displacement} (已自動帶入下欄並執行比對)`;
+
+                    // 3. 自動執行零件庫存與相容性查詢
+                    searchParts();
+                } else {
+                    throw new Error('未回傳有效車輛紀錄');
+                }
+            } catch (err) {
+                vinStatus.classList.remove('animate-pulse');
+                vinStatus.className = 'block text-xs text-rose-200 bg-rose-950/80 p-3 rounded-lg border border-rose-700/80 mt-3 font-medium';
+                vinStatus.innerHTML = `❌ VIN 解析失敗：${err.message}。您可以直接在下方手動選擇品牌與車型進行比對。`;
+            }
+        }
+
+        function clearSearchInputs() {
+            document.getElementById('search-vin').value = '';
+            document.getElementById('search-brand').value = '';
+            document.getElementById('search-model').value = '';
+            document.getElementById('search-year').value = '';
+            document.getElementById('search-part').value = '';
+            
+            const vinStatus = document.getElementById('vin-status');
+            vinStatus.innerHTML = '';
+            vinStatus.classList.add('hidden');
+
+            updateModelDatalist('');
+            document.getElementById('results').innerHTML = '<p class="text-slate-400 text-sm text-center py-6">請輸入條件或 VIN 碼並點擊上方按鈕。</p>';
+            currentResultsCache = [];
+        }
 
         function createVehicleRowHTML(prefix, v = {}) {
             return `
@@ -429,6 +523,12 @@
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     const activeEl = document.activeElement;
+                    if (activeEl && activeEl.id === 'search-vin') {
+                        e.preventDefault();
+                        parseAndSearchVIN();
+                        return;
+                    }
+
                     if (activeEl && activeEl.tagName === 'INPUT' && activeEl.type !== 'button' && activeEl.type !== 'submit' && activeEl.type !== 'file') {
                         e.preventDefault();
                         const container = activeEl.closest('form') || activeEl.closest('#tab-search');
@@ -449,16 +549,6 @@
                     }
                 }
             });
-        }
-
-        function clearSearchInputs() {
-            document.getElementById('search-brand').value = '';
-            document.getElementById('search-model').value = '';
-            document.getElementById('search-year').value = '';
-            document.getElementById('search-part').value = '';
-            updateModelDatalist('');
-            document.getElementById('results').innerHTML = '<p class="text-slate-400 text-sm text-center py-6">請輸入條件並點擊上方按鈕。</p>';
-            currentResultsCache = [];
         }
 
         function previewImages(event, containerId) {
@@ -540,7 +630,7 @@
         function updateModelDatalist(filterBrand = '') {
             let filtered = allVehiclesCache;
             if (filterBrand) {
-                filtered = allVehiclesCache.filter(v => v.brand.toLowerCase() === filterBrand);
+                filtered = allVehiclesCache.filter(v => v.brand.toLowerCase().includes(filterBrand));
             }
             const uniqueModels = [...new Set(filtered.map(v => v.model).filter(Boolean))];
             document.getElementById('model-list').innerHTML = uniqueModels.map(m => `<option value="${m}">`).join('');
@@ -582,7 +672,7 @@
             const rawPartInput = document.getElementById('search-part').value.trim();
             const resultsContainer = document.getElementById('results');
 
-            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在向 Supabase 檢索資料...</p>';
+            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在向 Supabase 檢索零件資料...</p>';
 
             const keywords = rawPartInput.split(/[,，\s\n、]+/).map(k => k.trim()).filter(k => k.length > 0);
 
@@ -593,7 +683,6 @@
                 )
             `);
 
-            // 多欄位跨條件比對：零件名稱、料號、廠商名稱、備註說明
             if (keywords.length > 0) {
                 const conditions = [];
                 keywords.forEach(k => {
@@ -703,7 +792,7 @@
             const item = currentResultsCache.find(p => p.id === id);
             const partName = item ? item.part_name : '該零件';
 
-            if (!confirm(`⚠️ 確定要刪除「${partName}」嗎？\n這將會移除此零件的所有通用車型綁定，此動作無法復原！`)) {
+            if (!confirm(`⚠️ 確定要刪除「${partName}」嗎？\n此動作無法復原！`)) {
                 return;
             }
 
