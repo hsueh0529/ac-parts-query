@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汽車與農機空調零件通用資料庫 (支援配套組合與雙向連動)</title>
+    <title>汽車與農機空調零件通用資料庫 (支援配套組合與批次刪除)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -102,7 +102,7 @@
             </div>
 
             <!-- 操作按鈕區 -->
-            <div class="flex flex-col md:flex-row gap-3 mb-6">
+            <div class="flex flex-col md:flex-row gap-3 mb-4">
                 <button onclick="searchParts()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1">
                     🔍 執行綜合查詢
                 </button>
@@ -111,6 +111,17 @@
                 </button>
                 <button onclick="clearSearchInputs()" class="bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
                     🧹 清除條件
+                </button>
+            </div>
+
+            <!-- 🚀 批次管理工具列 -->
+            <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl border border-slate-200 mb-4">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded text-blue-600 cursor-pointer">
+                    <label for="select-all-checkbox" class="text-xs font-bold text-slate-700 cursor-pointer">全選目前頁面項目</label>
+                </div>
+                <button onclick="batchDeleteParts()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                    🗑️ 批次刪除選取項目
                 </button>
             </div>
 
@@ -157,11 +168,10 @@
                         <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
                     </div>
 
-                    <!-- 🚀 新增：配套組合 / 建議搭配零件區塊 -->
                     <div class="bg-amber-50/80 p-3 rounded-lg border border-amber-200">
                         <label class="block text-xs font-bold text-amber-900 mb-1">
                             🔧 建議搭配配套零組件 (Kit / Companion Parts)
-                            <span class="font-normal text-[11px] text-amber-700 block">例如風箱需對應：[膨脹閥: V-101]、[O環組: OR-002]、[固定螺絲: SCR-8]，方便完工打包或報價時一併帶出。</span>
+                            <span class="font-normal text-[11px] text-amber-700 block">例如風箱需對應：[膨脹閥: V-101]、[O環組: OR-002]、[固定螺絲: SCR-8]。</span>
                         </label>
                         <textarea id="add-kit-parts" rows="2" placeholder="格式範例: 膨脹閥 (料號: V-01), O環 (料號: OR-99), 固定螺絲 (料號: S-02)" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
@@ -258,7 +268,6 @@
                         <textarea id="edit-cross-ref" rows="2" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
                     </div>
 
-                    <!-- 編輯配套組合 -->
                     <div class="bg-amber-50/80 p-2.5 rounded-lg border border-amber-200">
                         <label class="block text-xs font-bold text-amber-900 mb-1">🔧 建議搭配配套零組件 (Kit / Companion Parts)</label>
                         <textarea id="edit-kit-parts" rows="2" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
@@ -509,6 +518,41 @@
             } catch (err) { alert('❌ 刪除失敗：' + err.message); }
         }
 
+        // 🚀 批次全選控制
+        function toggleSelectAll(masterCheckbox) {
+            const checkboxes = document.querySelectorAll('.part-checkbox');
+            checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+        }
+
+        // 🚀 執行批次刪除
+        async function batchDeleteParts() {
+            const checkedBoxes = document.querySelectorAll('.part-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert('⚠️ 請先勾選要刪除的零件！');
+                return;
+            }
+
+            if (!confirm(`⚠️ 確定要刪除選取的 ${checkedBoxes.length} 筆零件嗎？此動作無法復原。`)) return;
+
+            try {
+                const idsToDelete = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+                
+                // 先刪除關聯的 vehicle 連結
+                await _supabase.from('part_vehicles').delete().in('part_id', idsToDelete);
+                // 再刪除零件主檔
+                const { error } = await _supabase.from('parts').delete().in('id', idsToDelete);
+                
+                if (error) throw error;
+
+                alert(`🗑️ 成功刪除 ${idsToDelete.length} 筆零件！`);
+                document.getElementById('select-all-checkbox').checked = false;
+                initHistoryDatalists();
+                searchParts();
+            } catch (err) {
+                alert('❌ 批次刪除失敗：' + err.message);
+            }
+        }
+
         async function copyQuote() {
             if (!currentResultsCache || currentResultsCache.length === 0) { alert('⚠️ 無查詢結果可複製！'); return; }
             let textLines = [];
@@ -645,6 +689,7 @@
 
             const resultsContainer = document.getElementById('results');
             resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行綜合比對...</p>';
+            document.getElementById('select-all-checkbox').checked = false;
 
             let query = _supabase.from('parts').select(`
                 id, part_name, brand_name, part_number, oem_number, cross_reference, kit_parts, price, price_date, cost, supplier_name, remarks, length, width, height, image_1, image_2, image_3,
@@ -685,8 +730,13 @@
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
 
                 return `
-                    <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition space-y-3">
-                        <div class="flex justify-between items-start">
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition space-y-3 relative">
+                        <!-- 批次勾選框 -->
+                        <div class="absolute top-4 left-4">
+                            <input type="checkbox" value="${item.id}" class="part-checkbox w-4 h-4 rounded text-blue-600 cursor-pointer">
+                        </div>
+
+                        <div class="flex justify-between items-start pl-7">
                             <div>
                                 <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">${item.brand_name || '通用'}</span>
                                 <h3 class="text-base font-bold text-slate-800 mt-1">${item.part_name}</h3>
@@ -700,7 +750,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pl-7">
                             <div class="bg-slate-50 p-2.5 rounded-lg border">
                                 本廠料號：<strong class="font-mono text-blue-900 bg-white px-1.5 py-0.5 rounded border">${item.part_number}</strong>
                                 ${item.cross_reference ? `
@@ -710,7 +760,6 @@
                                     </div>` : ''}
                             </div>
 
-                            <!-- 🚀 顯示配套組合區塊與一鍵跳轉 -->
                             <div class="bg-amber-50/70 p-2.5 rounded-lg border border-amber-200">
                                 <span class="text-amber-900 font-bold block mb-1">🔧 建議搭配配套零組件 (點擊一鍵查詢)：</span>
                                 ${item.kit_parts ? `
@@ -721,9 +770,9 @@
                             </div>
                         </div>
 
-                        ${images.length ? `<div class="flex gap-2">${images.map(img => `<img src="${img}" class="w-16 h-16 object-cover rounded border">`).join('')}</div>` : ''}
+                        ${images.length ? `<div class="flex gap-2 pl-7">${images.map(img => `<img src="${img}" class="w-16 h-16 object-cover rounded border">`).join('')}</div>` : ''}
 
-                        <div class="border-t pt-2">
+                        <div class="border-t pt-2 pl-7">
                             <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容底盤與車種 (點擊標籤一鍵跳轉篩選)：</span>
                             <div class="flex flex-wrap gap-1">
                                 ${vehicles.map(v => `
