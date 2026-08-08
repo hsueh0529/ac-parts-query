@@ -565,7 +565,7 @@
                 const priceStr = item.price ? '$' + Number(item.price).toLocaleString() : '請洽詢';
                 textLines.push(`【${item.part_name || '零件'}】`);
                 textLines.push(`▪ 本廠料號: ${item.part_number}`);
-                textLines.push(`▪ ${brand} 品牌前價: ${priceStr}`);
+                textLines.push(`▪ ${brand}: ${priceStr}`);
                 textLines.push('');
             });
             const copyText = textLines.join('\n').trim();
