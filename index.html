@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汽車與農機空調零件通用資料庫 (支援配套組合與獨立料號跳轉)</title>
+    <title>汽車與農機空調零件通用資料庫 (報價無配套、僅顯示前價)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -107,7 +107,7 @@
                     🔍 執行綜合查詢
                 </button>
                 <button onclick="copyQuote()" class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium px-5 py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1 whitespace-nowrap">
-                    📋 複製報價與配套清單
+                    📋 複製報價與前價清單
                 </button>
                 <button onclick="clearSearchInputs()" class="bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
                     🧹 清除條件
@@ -507,17 +507,12 @@
             searchParts();
         }
 
-        // 🚀 核心渲染邏輯：自動將配套文字中的 [料號] 轉換為個別獨立按鈕
         function renderKitPartsWithLinks(kitPartsText) {
             if (!kitPartsText) return '<span class="text-slate-400 text-[11px]">尚未設定配套零件</span>';
-            
-            // 使用正規表達式抓出所有被 [...] 包覆的料號
-            // 例如將 "膨脹閥 [V-101], O環組 [OR-002]" 解析並把中括號內文變按鈕
             let formattedHtml = kitPartsText.replace(/\[(.*?)\]/g, (match, partNumber) => {
                 const cleanNum = partNumber.trim();
                 return `<button onclick="jumpToKeywordSearch('${cleanNum}')" class="font-mono text-xs bg-white text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-300 hover:bg-blue-600 hover:text-white transition shadow-sm mx-0.5 inline-flex items-center gap-0.5">🔍 ${cleanNum}</button>`;
             });
-
             return `<div class="text-[11px] leading-relaxed">${formattedHtml}</div>`;
         }
 
@@ -532,13 +527,11 @@
             } catch (err) { alert('❌ 刪除失敗：' + err.message); }
         }
 
-        // 🚀 批次全選控制
         function toggleSelectAll(masterCheckbox) {
             const checkboxes = document.querySelectorAll('.part-checkbox');
             checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
         }
 
-        // 🚀 執行批次刪除
         async function batchDeleteParts() {
             const checkedBoxes = document.querySelectorAll('.part-checkbox:checked');
             if (checkedBoxes.length === 0) {
@@ -550,10 +543,8 @@
 
             try {
                 const idsToDelete = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
-                
                 await _supabase.from('part_vehicles').delete().in('part_id', idsToDelete);
                 const { error } = await _supabase.from('parts').delete().in('id', idsToDelete);
-                
                 if (error) throw error;
 
                 alert(`🗑️ 成功刪除 ${idsToDelete.length} 筆零件！`);
@@ -565,18 +556,21 @@
             }
         }
 
+        // 🚀 複製報價與前價清單 (已完全移除建議配套，改為顯示品牌對應前價)
         async function copyQuote() {
             if (!currentResultsCache || currentResultsCache.length === 0) { alert('⚠️ 無查詢結果可複製！'); return; }
             let textLines = [];
             currentResultsCache.forEach(item => {
+                const brand = item.brand_name || '一般';
+                const priceStr = item.price ? '$' + Number(item.price).toLocaleString() : '請洽詢';
                 textLines.push(`【${item.part_name || '零件'}】`);
-                textLines.push(`▪ 本廠料號: ${item.part_number} | 售價: ${item.price ? '$' + Number(item.price).toLocaleString() : '請洽詢'}`);
-                if (item.kit_parts) textLines.push(`▪ 建議配套組合: ${item.kit_parts}`);
+                textLines.push(`▪ 本廠料號: ${item.part_number}`);
+                textLines.push(`▪ ${brand} 品牌前價: ${priceStr}`);
                 textLines.push('');
             });
             const copyText = textLines.join('\n').trim();
             await navigator.clipboard.writeText(copyText);
-            alert('📋 報價與配套清單已複製至剪貼簿！\n\n' + copyText);
+            alert('📋 報價與前價清單已複製至剪貼簿！\n\n' + copyText);
         }
 
         function clearSearchInputs() {
@@ -768,7 +762,7 @@
                                 ${item.cross_reference ? `
                                     <div class="mt-1.5 pt-1.5 border-t">
                                         <span class="text-indigo-800 font-bold">🔗 交叉對照料號：</span>
-                                        <span onclick="jumpToKeywordSearch('${item.cross_reference.trim()}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}</span>
+                                        <span onclick="jumpToKeywordSearch('${item.cross_reference.trim() || ''}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}</span>
                                     </div>` : ''}
                             </div>
 
