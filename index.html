@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汽車與農機空調零件通用資料庫 (支援配套組合與批次刪除)</title>
+    <title>汽車與農機空調零件通用資料庫 (支援配套組合與獨立料號跳轉)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -171,9 +171,9 @@
                     <div class="bg-amber-50/80 p-3 rounded-lg border border-amber-200">
                         <label class="block text-xs font-bold text-amber-900 mb-1">
                             🔧 建議搭配配套零組件 (Kit / Companion Parts)
-                            <span class="font-normal text-[11px] text-amber-700 block">例如風箱需對應：[膨脹閥: V-101]、[O環組: OR-002]、[固定螺絲: SCR-8]。</span>
+                            <span class="font-normal text-[11px] text-amber-700 block">提示：將各配套料號用中括號包覆（例如：膨脹閥 [V-101]、O環組 [OR-002]），系統將自動生成獨立點擊按鈕！</span>
                         </label>
-                        <textarea id="add-kit-parts" rows="2" placeholder="格式範例: 膨脹閥 (料號: V-01), O環 (料號: OR-99), 固定螺絲 (料號: S-02)" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
+                        <textarea id="add-kit-parts" rows="2" placeholder="格式範例: 膨脹閥 [V-101], O環組 [OR-002], 固定螺絲 [SCR-8]" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -270,7 +270,7 @@
 
                     <div class="bg-amber-50/80 p-2.5 rounded-lg border border-amber-200">
                         <label class="block text-xs font-bold text-amber-900 mb-1">🔧 建議搭配配套零組件 (Kit / Companion Parts)</label>
-                        <textarea id="edit-kit-parts" rows="2" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
+                        <textarea id="edit-kit-parts" rows="2" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white" placeholder="例: 膨脹閥 [V-101], O環 [OR-002]"></textarea>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
@@ -507,6 +507,20 @@
             searchParts();
         }
 
+        // 🚀 核心渲染邏輯：自動將配套文字中的 [料號] 轉換為個別獨立按鈕
+        function renderKitPartsWithLinks(kitPartsText) {
+            if (!kitPartsText) return '<span class="text-slate-400 text-[11px]">尚未設定配套零件</span>';
+            
+            // 使用正規表達式抓出所有被 [...] 包覆的料號
+            // 例如將 "膨脹閥 [V-101], O環組 [OR-002]" 解析並把中括號內文變按鈕
+            let formattedHtml = kitPartsText.replace(/\[(.*?)\]/g, (match, partNumber) => {
+                const cleanNum = partNumber.trim();
+                return `<button onclick="jumpToKeywordSearch('${cleanNum}')" class="font-mono text-xs bg-white text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-300 hover:bg-blue-600 hover:text-white transition shadow-sm mx-0.5 inline-flex items-center gap-0.5">🔍 ${cleanNum}</button>`;
+            });
+
+            return `<div class="text-[11px] leading-relaxed">${formattedHtml}</div>`;
+        }
+
         async function deletePartById(id, partName) {
             if (!confirm(`⚠️ 確定要刪除零件【${partName}】嗎？`)) return;
             try {
@@ -537,9 +551,7 @@
             try {
                 const idsToDelete = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
                 
-                // 先刪除關聯的 vehicle 連結
                 await _supabase.from('part_vehicles').delete().in('part_id', idsToDelete);
-                // 再刪除零件主檔
                 const { error } = await _supabase.from('parts').delete().in('id', idsToDelete);
                 
                 if (error) throw error;
@@ -761,12 +773,8 @@
                             </div>
 
                             <div class="bg-amber-50/70 p-2.5 rounded-lg border border-amber-200">
-                                <span class="text-amber-900 font-bold block mb-1">🔧 建議搭配配套零組件 (點擊一鍵查詢)：</span>
-                                ${item.kit_parts ? `
-                                    <span onclick="jumpToKeywordSearch('${item.kit_parts.trim()}')" class="font-mono text-amber-900 bg-white px-1.5 py-0.5 rounded border border-amber-300 cursor-pointer hover:bg-amber-100 transition block text-[11px] leading-relaxed">
-                                        ${item.kit_parts} ↗
-                                    </span>
-                                ` : '<span class="text-slate-400 text-[11px]">尚未設定配套零件</span>'}
+                                <span class="text-amber-900 font-bold block mb-1">🔧 建議搭配配套零組件 (點擊各料號按鈕一鍵查詢)：</span>
+                                ${renderKitPartsWithLinks(item.kit_parts)}
                             </div>
                         </div>
 
