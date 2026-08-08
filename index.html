@@ -14,8 +14,10 @@
     <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span>🚗 汽車空調零件通用資料庫</span>
-            <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">雲端同步中</span>
+            <span class="flex items-center gap-2">🚗 汽車空調零件通用資料庫</span>
+            <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
+            </span>
         </h1>
 
         <!-- 功能頁籤切換按鈕 -->
@@ -38,29 +40,29 @@
                     <datalist id="brand-list"></datalist>
                 </div>
 
-                <!-- 車型 (根據品牌連動縮小範圍) -->
+                <!-- 車型 / 底盤號 / VIN -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">車型 / 底盤號</label>
-                    <input type="text" id="search-model" list="model-list" placeholder="請先選擇品牌..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">車型 / 底盤號 / VIN</label>
+                    <input type="text" id="search-model" list="model-list" placeholder="例如: E36 / W210..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     <datalist id="model-list"></datalist>
                 </div>
 
                 <!-- 年份 -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">年份</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">年份 (出廠/適用)</label>
                     <input type="number" id="search-year" placeholder="例如: 1995" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
-                <!-- 零件名稱 -->
+                <!-- 零件名稱與料號 (多關鍵字) -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 (多關鍵字以逗號隔開)</label>
-                    <input type="text" id="search-part" placeholder="例如: 壓縮機, 蒸發器" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">零件 / 料號 / 廠商 (逗號分隔)</label>
+                    <input type="text" id="search-part" placeholder="例如: 壓縮機, DCP05001" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
             </div>
 
             <!-- 操作按鈕列 -->
             <div class="flex flex-col md:flex-row gap-3 mb-6">
-                <button onclick="searchParts()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-2.5 rounded-lg shadow transition">
+                <button onclick="searchParts()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1">
                     🔍 執行批次查詢
                 </button>
                 <button onclick="clearSearchInputs()" class="bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
@@ -88,8 +90,8 @@
                             <input type="text" id="add-part-name" required placeholder="例如: 汽車空調壓縮機 5SER12C" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">品牌 *</label>
-                            <input type="text" id="add-brand-name" required placeholder="品牌 (例如: Denso, 原廠, Sanden)" class="w-full border rounded-lg p-2 text-sm">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">品牌 / 製造商 *</label>
+                            <input type="text" id="add-brand-name" required placeholder="例如: Denso, 原廠, Sanden" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                     </div>
 
@@ -144,7 +146,7 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">備註說明</label>
-                        <input type="text" id="add-remarks" placeholder="例如: 附帶腳架、需搭配指定冷媒" class="w-full border rounded-lg p-2 text-sm">
+                        <input type="text" id="add-remarks" placeholder="例如: 附帶腳架、冷媒規格 R134a" class="w-full border rounded-lg p-2 text-sm">
                     </div>
 
                     <!-- 新增零件照片 -->
@@ -258,7 +260,7 @@
 
                     <!-- 編輯圖片區塊 -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">更新零件照片 (重新選擇會覆蓋舊照片)</label>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">更新零件照片 (上傳新照片將取代舊照片)</label>
                         <input type="file" id="edit-images" accept="image/*" multiple onchange="previewImages(event, 'edit-preview-container')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                         <div id="edit-preview-container" class="flex gap-2 mt-3 overflow-x-auto"></div>
                     </div>
@@ -414,7 +416,9 @@
                         .select();
 
                     if (vError) throw vError;
-                    vehicleIds.push(newVehicle[0].id);
+                    if (newVehicle && newVehicle.length > 0) {
+                        vehicleIds.push(newVehicle[0].id);
+                    }
                 }
             }
 
@@ -462,14 +466,17 @@
             container.innerHTML = '';
             const files = Array.from(event.target.files).slice(0, 3);
 
-            files.forEach(file => {
+            files.forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.className = 'w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer';
-                    img.onclick = () => openImageModal(e.target.result);
-                    container.appendChild(img);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'relative group shrink-0';
+                    wrapper.innerHTML = `
+                        <img src="${e.target.result}" class="w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer">
+                        <span class="absolute bottom-1 right-1 bg-slate-900/70 text-white text-[10px] px-1 rounded">#${index + 1}</span>
+                    `;
+                    wrapper.querySelector('img').onclick = () => openImageModal(e.target.result);
+                    container.appendChild(wrapper);
                 };
                 reader.readAsDataURL(file);
             });
@@ -586,9 +593,16 @@
                 )
             `);
 
+            // 多欄位跨條件比對：零件名稱、料號、廠商名稱、備註說明
             if (keywords.length > 0) {
-                const orConditions = keywords.map(k => `part_name.ilike.%${k}%`).join(',');
-                query = query.or(orConditions);
+                const conditions = [];
+                keywords.forEach(k => {
+                    conditions.push(`part_name.ilike.%${k}%`);
+                    conditions.push(`part_number.ilike.%${k}%`);
+                    conditions.push(`supplier_name.ilike.%${k}%`);
+                    conditions.push(`remarks.ilike.%${k}%`);
+                });
+                query = query.or(conditions.join(','));
             }
 
             const { data, error } = await query;
@@ -599,12 +613,12 @@
             }
 
             const filteredData = data.filter(item => {
-                const vehicleList = item.part_vehicles.map(pv => pv.vehicles).filter(Boolean);
+                const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 if (!searchBrand && !searchModel && !year) return true;
 
                 return vehicleList.some(v => {
-                    const matchBrand = !searchBrand || v.brand.toLowerCase().includes(searchBrand);
-                    const matchModel = !searchModel || v.model.toLowerCase().includes(searchModel);
+                    const matchBrand = !searchBrand || (v.brand && v.brand.toLowerCase().includes(searchBrand));
+                    const matchModel = !searchModel || (v.model && v.model.toLowerCase().includes(searchModel));
                     const matchYear = !year || (year >= v.start_year && year <= v.end_year);
                     return matchBrand && matchModel && matchYear;
                 });
@@ -623,7 +637,7 @@
             }
 
             resultsContainer.innerHTML = list.map(item => {
-                const allVehicles = item.part_vehicles.map(pv => pv.vehicles).filter(Boolean);
+                const allVehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
                 const dimText = formatDimensions(item.length, item.width, item.height);
                 
@@ -632,7 +646,7 @@
                         <div class="flex justify-between items-start gap-2 mb-2">
                             <div>
                                 <span class="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">
-                                    ${item.brand_name}
+                                    ${item.brand_name || '通用廠牌'}
                                 </span>
                                 <h3 class="text-base font-bold text-slate-800 mt-1.5">${item.part_name}</h3>
                             </div>
@@ -685,7 +699,6 @@
             }).join('');
         }
 
-        // 刪除零件功能
         async function deletePart(id) {
             const item = currentResultsCache.find(p => p.id === id);
             const partName = item ? item.part_name : '該零件';
@@ -695,10 +708,7 @@
             }
 
             try {
-                // 1. 刪除關聯車型對應
                 await _supabase.from('part_vehicles').delete().eq('part_id', id);
-
-                // 2. 刪除零件主檔
                 const { error } = await _supabase.from('parts').delete().eq('id', id);
 
                 if (error) throw error;
@@ -771,17 +781,20 @@
             const previewContainer = document.getElementById('edit-preview-container');
             previewContainer.innerHTML = '';
             const existingImages = [item.image_1, item.image_2, item.image_3].filter(Boolean);
-            existingImages.forEach(url => {
-                const img = document.createElement('img');
-                img.src = url;
-                img.className = 'w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer';
-                img.onclick = () => openImageModal(url);
-                previewContainer.appendChild(img);
+            existingImages.forEach((url, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative shrink-0';
+                wrapper.innerHTML = `
+                    <img src="${url}" class="w-20 h-20 object-cover rounded-lg border border-slate-200 shadow-sm cursor-pointer">
+                    <span class="absolute bottom-1 right-1 bg-slate-900/70 text-white text-[10px] px-1 rounded">已有照片</span>
+                `;
+                wrapper.querySelector('img').onclick = () => openImageModal(url);
+                previewContainer.appendChild(wrapper);
             });
 
             const editVehiclesContainer = document.getElementById('edit-vehicles-container');
             editVehiclesContainer.innerHTML = '';
-            const vehicles = item.part_vehicles.map(pv => pv.vehicles).filter(Boolean);
+            const vehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
 
             if (vehicles.length > 0) {
                 vehicles.forEach(v => addVehicleRow('edit-vehicles-container', 'edit', v));
@@ -840,9 +853,9 @@
                 };
 
                 if (img1 || img2 || img3) {
-                    updatePayload.image_1 = img1;
-                    updatePayload.image_2 = img2;
-                    updatePayload.image_3 = img3;
+                    if (img1) updatePayload.image_1 = img1;
+                    if (img2) updatePayload.image_2 = img2;
+                    if (img3) updatePayload.image_3 = img3;
                 }
 
                 const { error: partError } = await _supabase.from('parts').update(updatePayload).eq('id', id);
