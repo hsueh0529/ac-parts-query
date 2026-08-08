@@ -85,7 +85,7 @@
                     🔍 執行綜合查詢
                 </button>
                 <button onclick="copyQuote()" class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium px-5 py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1 whitespace-nowrap">
-                    📋 複製報價與前價清單 (含車型年份)
+                    📋 複製報價與前價清單 (指定格式)
                 </button>
                 <button onclick="clearSearchInputs()" class="bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
                     🧹 清除條件
@@ -499,52 +499,72 @@
             }
         }
 
-        // 🚀 複製報價與前價清單（自動帶入車型與年份）
+        // 🚀 複製報價與前價清單（指定格式：品牌+車型+年份，零件名底下條列各品牌與前價）
         async function copyQuote() {
             if (!currentResultsCache || currentResultsCache.length === 0) { 
                 alert('⚠️ 無查詢結果可複製！'); 
                 return; 
             }
             
-            let textLines = [];
-            textLines.push(`【汽車空調零件報價清單】`);
-            textLines.push(`====================`);
-
-            currentResultsCache.forEach((item, index) => {
-                const brand = item.brand_name || '一般';
-                const priceStr = item.price ? 'NT$ ' + Number(item.price).toLocaleString() : '請洽詢';
-                const partNumber = item.part_number ? ` (料號: ${item.part_number})` : '';
-                
-                // 抓取該零件對應的車型與年份
-                const vehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
-                let vehicleStr = '';
+            // 1. 取得車型標頭 (品牌 + 車型 + 年份)
+            const sBrand = document.getElementById('search-brand').value.trim();
+            const sModel = document.getElementById('search-model').value.trim();
+            const sYear = document.getElementById('search-year').value.trim();
+            
+            let vehicleHeader = '';
+            if (sBrand || sModel || sYear) {
+                vehicleHeader = `${sBrand} ${sModel} ${sYear}`.trim();
+            } else {
+                // 若搜尋欄未填，嘗試從第一筆結果的車型關聯帶入
+                const firstItem = currentResultsCache[0];
+                const vehicles = firstItem.part_vehicles ? firstItem.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 if (vehicles.length > 0) {
-                    const vInfos = vehicles.map(v => `${v.brand} ${v.model} (${v.start_year}-${v.end_year})`);
-                    vehicleStr = `\n   適用車型：${vInfos.join('、 ')}`;
+                    vehicleHeader = `${vehicles[0].brand || ''} ${vehicles[0].model || ''} ${vehicles[0].start_year || ''}`.trim();
                 }
+            }
 
-                textLines.push(`${index + 1}. 【${item.part_name || '零件'}】 - ${brand}${partNumber}`);
-                textLines.push(`   參考前價：${priceStr}${vehicleStr}`);
-                if (item.remarks) {
-                    textLines.push(`   備註說明：${item.remarks}`);
+            let textLines = [];
+            if (vehicleHeader) {
+                textLines.push(vehicleHeader);
+                textLines.push('');
+            }
+
+            // 2. 依零件名稱將搜尋結果分組
+            const groupedByPartName = {};
+            currentResultsCache.forEach(item => {
+                const pName = item.part_name || '未命名零件';
+                if (!groupedByPartName[pName]) {
+                    groupedByPartName[pName] = [];
                 }
-                textLines.push(''); // 空行間隔
+                groupedByPartName[pName].push(item);
+            });
+
+            // 3. 組合指定格式：
+            // 【零件名】
+            // 品牌 $前價
+            Object.keys(groupedByPartName).forEach(pName => {
+                textLines.push(`【${pName}】`);
+                groupedByPartName[pName].forEach(item => {
+                    const brandName = item.brand_name || '一般';
+                    const priceStr = item.price ? `$${Number(item.price).toLocaleString()}` : '$請洽詢';
+                    textLines.push(`${brandName} ${priceStr}`);
+                });
+                textLines.push(''); // 空行區隔
             });
 
             const copyText = textLines.join('\n').trim();
             
             try {
                 await navigator.clipboard.writeText(copyText);
-                alert('📋 報價與前價清單（含車型年份）已成功複製至剪貼簿！\n\n' + copyText);
+                alert('📋 指定格式報價已成功複製至剪貼簿！\n\n' + copyText);
             } catch (err) {
-                // 備用方法
                 const textArea = document.createElement("textarea");
                 textArea.value = copyText;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                alert('📋 報價與前價清單已複製！');
+                alert('📋 報價格式已複製！');
             }
         }
 
