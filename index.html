@@ -322,15 +322,15 @@
 
         /* ================= ⚡ 精準底盤號 (Chassis Code) 解碼引擎 ================= */
         function parseVINLocally(vin) {
-            if (!vin || vin.length !== 17) return null;
+            if (!vin || vin.length !== 17) return { brand: '', model: '', year: '' };
 
             const wmi = vin.substring(0, 3);
             const yearChar = vin.charAt(9);
 
-            // 1. 年份對照表 (第 10 位)
+            // 1. 年份對照表 (修正重複 Key 覆蓋 Bug)
             const yearMap = {
                 'A': 2010, 'B': 2011, 'C': 2012, 'D': 2013, 'E': 2014, 'F': 2015, 'G': 2016, 'H': 2017, 'J': 2018, 'K': 2019, 'L': 2020, 'M': 2021, 'N': 2022, 'P': 2023, 'R': 2024, 'S': 2025, 'T': 2026,
-                'N': 1992, 'P': 1993, 'R': 1994, 'S': 1995, 'T': 1996, 'V': 1997, 'W': 1998, 'X': 1999, 'Y': 2000, '1': 2001, '2': 2002, '3': 2003, '4': 2004, '5': 2005, '6': 2006, '7': 2007, '8': 2008, '9': 2009
+                'V': 1997, 'W': 1998, 'X': 1999, 'Y': 2000, '1': 2001, '2': 2002, '3': 2003, '4': 2004, '5': 2005, '6': 2006, '7': 2007, '8': 2008, '9': 2009
             };
             const year = yearMap[yearChar] || '';
 
@@ -342,11 +342,10 @@
             else if (wmi.startsWith('WV') || wmi.startsWith('WAU')) brand = 'Volkswagen';
             else if (wmi.startsWith('JH') || wmi.startsWith('1HG')) brand = 'Honda';
 
-            // 3. 底盤代碼精準解析 (排除 B-Class, 3 Series 等籠統名稱)
+            // 3. 底盤代碼精準解析
             let model = '';
             
             if (brand === 'Mercedes-Benz') {
-                // 賓士 VIN 第 4~6 位即為底盤號 (例如 WDD246042... 中的 246)
                 const chassis3 = vin.substring(3, 6);
                 if (/^\d{3}$/.test(chassis3)) {
                     const prefixMap = {
@@ -389,10 +388,10 @@
             vinStatus.className = 'block text-xs text-blue-200 bg-blue-950/80 p-3 rounded-lg border border-blue-700/80 mt-3 font-medium animate-pulse';
             vinStatus.innerHTML = '⏳ 正在分析 VIN 車身結構與識別底盤碼...';
 
-            let decoded = parseVINLocally(vinInput);
+            let decoded = parseVINLocally(vinInput) || { brand: '', model: '', year: '' };
             
-            // 備用 API 連線 (會屏障 Series / Class 等籠統名稱)
-            if (!decoded || !decoded.model) {
+            // 備用 API 連線 (屏障 Series / Class 等籠統名稱)
+            if (!decoded.model) {
                 try {
                     const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vinInput}?format=json`);
                     if (res.ok) {
@@ -402,7 +401,6 @@
                             if (!decoded.brand) decoded.brand = apiRes.Make || '';
                             if (!decoded.year) decoded.year = apiRes.ModelYear || '';
                             const rawModel = apiRes.Model || apiRes.Series || '';
-                            // 屏障籠統車系字眼
                             if (rawModel && !/series|class|級/i.test(rawModel)) {
                                 decoded.model = rawModel;
                             }
@@ -432,7 +430,6 @@
                 return;
             }
 
-            // 依據零件名稱 (part_name) 進行分組
             const grouped = {};
             currentResultsCache.forEach(item => {
                 const pName = item.part_name ? item.part_name.trim() : '未命名零件';
@@ -444,11 +441,12 @@
             for (const [partName, items] of Object.entries(grouped)) {
                 textLines.push(`【${partName}】`);
                 items.forEach(item => {
-                    const brand = item.brand_name || '未指定品牌';
-                    const priceVal = (item.price !== null && item.price !== undefined && item.price !== '') ? item.price : '';
-                    textLines.push(`${brand} $${priceVal}`);
+                    const brand = item.brand_name || '通用';
+                    const pNo = item.part_number ? `(${item.part_number})` : '';
+                    const priceVal = (item.price !== null && item.price !== undefined && item.price !== '') ? `$${Number(item.price).toLocaleString()}` : '請洽詢';
+                    textLines.push(`▪ ${brand} ${pNo} : ${priceVal}`);
                 });
-                textLines.push(''); // 空行分隔
+                textLines.push('');
             }
 
             const copyText = textLines.join('\n').trim();
@@ -457,7 +455,6 @@
                 await navigator.clipboard.writeText(copyText);
                 alert('📋 報價文字已成功複製至剪貼簿！\n\n' + copyText);
             } catch (err) {
-                // 相容舊型瀏覽器剪貼簿複製
                 const textarea = document.createElement('textarea');
                 textarea.value = copyText;
                 document.body.appendChild(textarea);
@@ -596,10 +593,11 @@
 
         async function uploadImages(fileInputId) {
             const fileInput = document.getElementById(fileInputId);
-            const files = Array.from(fileInput.files).slice(0, 3);
-            if (files.length === 0) return [null, null, null];
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return [null, null, null];
 
+            const files = Array.from(fileInput.files).slice(0, 3);
             const uploadedUrls = [null, null, null];
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const filePath = `parts/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${file.name.split('.').pop()}`;
@@ -702,7 +700,8 @@
 
             resultsContainer.innerHTML = list.map(item => {
                 const allVehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
-                
+                const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
+
                 return `
                     <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition">
                         <div class="flex justify-between items-start gap-2 mb-2">
@@ -718,11 +717,12 @@
                             </div>
                         </div>
 
-                        <!-- 關鍵料號 -->
+                        <!-- 關鍵料號與尺寸 -->
                         <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs space-y-1 my-2">
                             <div class="flex flex-wrap gap-3">
                                 <span>本廠料號：<strong class="font-mono text-blue-900 bg-white px-1.5 py-0.5 rounded border">${item.part_number}</strong></span>
                                 ${item.oem_number ? `<span>OEM 原廠號：<strong class="font-mono text-slate-700 bg-white px-1.5 py-0.5 rounded border">${item.oem_number}</strong></span>` : ''}
+                                ${(item.length || item.width || item.height) ? `<span>尺寸 (mm)：<strong class="font-mono text-slate-700">${item.length || '-'} × ${item.width || '-'} × ${item.height || '-'}</strong></span>` : ''}
                             </div>
                             
                             ${item.cross_reference ? `
@@ -732,6 +732,12 @@
                                 </div>
                             ` : ''}
                         </div>
+
+                        ${images.length > 0 ? `
+                            <div class="flex gap-2 my-2">
+                                ${images.map(img => `<img src="${img}" class="w-16 h-16 object-cover rounded border">`).join('')}
+                            </div>
+                        ` : ''}
 
                         <div class="text-xs text-slate-500 mb-2">
                             ${item.remarks ? `備註：${item.remarks}` : ''}
@@ -763,6 +769,21 @@
             document.getElementById('edit-price').value = item.price !== null ? item.price : '';
             document.getElementById('edit-price-date').value = item.price_date || '';
             document.getElementById('edit-remarks').value = item.remarks || '';
+            
+            // 還原尺寸數據
+            document.getElementById('edit-length').value = item.length !== null ? item.length : '';
+            document.getElementById('edit-width').value = item.width !== null ? item.width : '';
+            document.getElementById('edit-height').value = item.height !== null ? item.height : '';
+
+            // 預覽既有圖片
+            const previewContainer = document.getElementById('edit-preview-container');
+            previewContainer.innerHTML = '';
+            [item.image_1, item.image_2, item.image_3].filter(Boolean).forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'w-16 h-16 object-cover rounded border';
+                previewContainer.appendChild(img);
+            });
 
             const editVehiclesContainer = document.getElementById('edit-vehicles-container');
             editVehiclesContainer.innerHTML = '';
@@ -782,6 +803,8 @@
         async function handleSaveEdit(e) {
             e.preventDefault();
             const id = document.getElementById('edit-id').value;
+            const currentPart = currentResultsCache.find(p => p.id == id);
+
             const updatePayload = {
                 part_name: document.getElementById('edit-part-name').value.trim(),
                 brand_name: document.getElementById('edit-brand-name').value.trim(),
@@ -792,8 +815,17 @@
                 cost: parseFloat(document.getElementById('edit-cost').value) || null,
                 price: parseFloat(document.getElementById('edit-price').value) || null,
                 price_date: document.getElementById('edit-price-date').value || null,
-                remarks: document.getElementById('edit-remarks').value.trim() || null
+                remarks: document.getElementById('edit-remarks').value.trim() || null,
+                length: parseFloat(document.getElementById('edit-length').value) || null,
+                width: parseFloat(document.getElementById('edit-width').value) || null,
+                height: parseFloat(document.getElementById('edit-height').value) || null
             };
+
+            // 處理圖片更新
+            const [newImg1, newImg2, newImg3] = await uploadImages('edit-images');
+            if (newImg1) updatePayload.image_1 = newImg1;
+            if (newImg2) updatePayload.image_2 = newImg2;
+            if (newImg3) updatePayload.image_3 = newImg3;
 
             await _supabase.from('parts').update(updatePayload).eq('id', id);
             const vehicleIds = await getOrCreateVehicleIds('edit-vehicles-container', 'edit');
@@ -821,7 +853,10 @@
                 cost: parseFloat(document.getElementById('add-cost').value) || null,
                 price: parseFloat(document.getElementById('add-price').value) || null,
                 price_date: document.getElementById('add-price-date').value || null,
-                remarks: document.getElementById('add-remarks').value.trim() || null
+                remarks: document.getElementById('add-remarks').value.trim() || null,
+                length: parseFloat(document.getElementById('add-length').value) || null,
+                width: parseFloat(document.getElementById('add-width').value) || null,
+                height: parseFloat(document.getElementById('add-height').value) || null
             };
 
             const [img1, img2, img3] = await uploadImages('add-images');
@@ -840,6 +875,7 @@
 
             alert('✅ 零件與關聯對照新增成功！');
             document.getElementById('add-part-form').reset();
+            document.getElementById('add-preview-container').innerHTML = '';
             switchTab('search');
             searchParts();
         }
