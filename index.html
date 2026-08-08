@@ -39,14 +39,14 @@
         <!-- ================= 1. 查詢分頁 ================= -->
         <div id="tab-search" class="block">
             
-            <!-- VIN 17位車身碼高精準解析專區 (已加強自動帶出精準車型與相容車款) -->
+            <!-- VIN 17位車身碼高精準解析專區 (專業升級版) -->
             <div class="mb-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-4 rounded-xl text-white shadow-md">
                 <div class="flex items-center justify-between mb-2">
                     <label class="block text-xs font-bold uppercase tracking-wider text-indigo-200 flex items-center gap-1.5">
-                        ⚡ VIN 車身碼智慧解碼與車型相容解析器
+                        ⚡ 專業 VIN 車身碼智慧解碼與車型相容解析器
                     </label>
                     <span id="api-badge" class="text-[10px] bg-indigo-800/80 text-indigo-200 px-2 py-0.5 rounded border border-indigo-600 font-mono">
-                        VIN 引擎預備
+                        VIN 專業解碼就緒
                     </span>
                 </div>
                 
@@ -54,7 +54,7 @@
                     <input type="text" id="search-vin" maxlength="17" placeholder="輸入 17 位 VIN 車身碼 (例: WDD246... / WBA3A5...)" 
                            class="flex-1 border-0 rounded-lg p-2.5 text-sm text-slate-900 font-mono tracking-wider focus:ring-2 focus:ring-emerald-400 outline-none uppercase placeholder:text-slate-400">
                     <button onclick="parseAndSearchVIN()" class="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-bold px-5 py-2.5 rounded-lg transition flex items-center justify-center gap-1.5 whitespace-nowrap text-sm shadow">
-                        ⚡ 解析 VIN 並精準搜尋
+                        ⚡ 深度解析 VIN 並精準搜尋
                     </button>
                 </div>
                 
@@ -435,10 +435,12 @@
             return null;
         }
 
+        // ================= 專業車身碼 (VIN) 解析與車型對照核心 =================
         function parseVINLocally(vin) {
             if (!vin || vin.length !== 17) return { brand: '', model: '', year: '' };
             const wmi = vin.substring(0, 3).toUpperCase();
             const vds = vin.substring(3, 9).toUpperCase();
+            const fullVin = vin.toUpperCase();
             const yearChar = vin.charAt(9).toUpperCase();
             
             const yearMap = { 
@@ -450,31 +452,43 @@
             let brand = '';
             let model = '';
 
-            // 車廠與常見車型/底盤對照邏輯增強
+            // 精準對照歐系與日系車廠、底盤編號、空調零件相容車款
             if (wmi.startsWith('WB') || wmi.startsWith('WBY') || wmi.startsWith('WBS')) {
                 brand = 'BMW';
-                if (vds.includes('3A') || vds.includes('3B') || vin.substring(0,5) === 'WBA3A' || vin.substring(0,5) === 'WBA3B') model = 'E36';
-                else if (vds.includes('AM') || vds.includes('AN') || vds.includes('AL')) model = 'E46';
-                else if (vds.includes('NW') || vds.includes('NX') || vds.includes('NU')) model = 'E90';
-                else if (vds.includes('FV') || vds.includes('FW')) model = 'F30';
+                if (vds.includes('3A') || vds.includes('3B') || fullVin.startsWith('WBA3A') || fullVin.startsWith('WBA3B')) model = 'E36';
+                else if (vds.includes('AM') || vds.includes('AN') || vds.includes('AL') || fullVin.startsWith('WBAAM')) model = 'E46';
+                else if (vds.includes('NW') || vds.includes('NX') || vds.includes('NU') || fullVin.startsWith('WBANW')) model = 'E90';
+                else if (vds.includes('FV') || vds.includes('FW') || fullVin.startsWith('WBAFV')) model = 'F30';
+                else if (vds.includes('5A') || vds.includes('5C')) model = 'G20';
+                else model = 'BMW 3系列/5系列';
             } else if (wmi.startsWith('WD') || wmi.startsWith('WM') || wmi.startsWith('4JG')) {
                 brand = 'Mercedes-Benz';
-                if (vds.includes('246') || vin.substring(3,8).includes('246')) model = 'W246';
-                else if (vds.includes('204') || vin.substring(3,8).includes('204')) model = 'W204';
-                else if (vds.includes('212') || vin.substring(3,8).includes('212')) model = 'W212';
-                else if (vds.includes('166') || vin.substring(3,8).includes('166')) model = 'W166';
-                else if (vds.includes('176') || vin.substring(3,8).includes('176')) model = 'W176';
+                if (vds.includes('246') || fullVin.includes('246')) model = 'W246';
+                else if (vds.includes('204') || fullVin.includes('204')) model = 'W204';
+                else if (vds.includes('212') || fullVin.includes('212')) model = 'W212';
+                else if (vds.includes('166') || fullVin.includes('166')) model = 'W166';
+                else if (vds.includes('176') || fullVin.includes('176')) model = 'W176';
+                else if (vds.includes('205') || fullVin.includes('205')) model = 'W205';
+                else if (vds.includes('213') || fullVin.includes('213')) model = 'W213';
+                else model = '賓士全車系';
             } else if (wmi.startsWith('JT') || wmi.startsWith('4T1') || wmi.startsWith('5YF')) {
                 brand = 'Toyota';
                 if (vds.includes('ZVW') || vds.includes('3NV')) model = 'Prius';
                 else if (vds.includes('AXVH') || vds.includes('ACV')) model = 'Camry';
                 else if (vds.includes('NRE') || vds.includes('ZRE')) model = 'Corolla';
+                else model = 'Toyota 國產/進口車';
             } else if (wmi.startsWith('JHM') || wmi.startsWith('1HG')) {
                 brand = 'Honda';
                 model = 'Civic / Accord';
+            } else if (wmi.startsWith('SAL')) {
+                brand = 'Land Rover';
+                model = 'Discovery / Range Rover';
+            } else if (wmi.startsWith('WAU')) {
+                brand = 'Audi';
+                model = 'A4 / A6';
             }
 
-            return { source: 'VIN 智慧規則', brand, model, year };
+            return { source: '專業底盤/VIN 規則解析', brand, model, year };
         }
 
         async function parseAndSearchVIN() {
@@ -483,7 +497,7 @@
             if (!vinInput || vinInput.length !== 17) { alert('⚠️ 請輸入正確的 17 位 VIN 車身碼！'); return; }
 
             vinStatus.classList.remove('hidden');
-            vinStatus.innerHTML = '⏳ 正在解析車身碼並帶出對應車型與零件清單...';
+            vinStatus.innerHTML = '⏳ 正在深度解析車身碼、判讀底盤代號與相容空調零件...';
 
             let decoded = await fetchVincarioDecoder(vinInput) || parseVINLocally(vinInput);
             
@@ -492,9 +506,9 @@
             if (decoded.model) document.getElementById('search-model').value = decoded.model;
             if (decoded.year) document.getElementById('search-year').value = decoded.year;
 
-            vinStatus.innerHTML = `✅ <b>[${decoded.source}] 解碼成功：</b> ${decoded.year || ''} ${decoded.brand || ''} <b>${decoded.model || '全車系對應'}</b>`;
+            vinStatus.innerHTML = `✅ <b>[${decoded.source}] 辨識成功：</b> 年份 ${decoded.year || '未定'}｜品牌 <b>${decoded.brand || '未知'}</b>｜精準底盤/車型 <b>${decoded.model || '通用車系'}</b>`;
             
-            // 自動觸發綜合搜尋，即時帶出相容空調零件
+            // 自動觸發綜合搜尋，即時帶出對應空調零件
             searchParts();
         }
 
