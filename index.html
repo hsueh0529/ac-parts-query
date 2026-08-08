@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汽車與農機空調零件通用資料庫 (支援 Vincario 專業 VIN 解碼與批次刪除)</title>
+    <title>汽車與農機空調零件通用資料庫 (支援雙向連動與一鍵跳轉)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -20,7 +20,7 @@
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">❄️ 汽車/農機/重機空調零件管理系統</span>
+            <span class="flex items-center gap-2">❄️ 汽車/農機/重機空調零件管理系統 (雙向連動版)</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
             </span>
@@ -61,32 +61,32 @@
                 <div id="vin-status" class="hidden"></div>
             </div>
 
-            <!-- 複合搜尋條件 -->
+            <!-- 複合搜尋條件 (雙向連動綁定) -->
             <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別 (可自由輸入)</label>
-                    <input type="text" id="search-vehicle-type" list="vehicle-type-list" placeholder="手動輸入或選擇..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別 (雙向連動)</label>
+                    <input type="text" id="search-vehicle-type" list="vehicle-type-list" placeholder="手動輸入或選擇..." oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌</label>
-                    <input type="text" id="search-brand" list="brand-list" placeholder="選擇或輸入品牌..." oninput="handleBrandChange()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="search-brand" list="brand-list" placeholder="選擇或輸入品牌..." oninput="handleBrandChange(); triggerTwoWaySync();" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">底盤號 / 車型</label>
-                    <input type="text" id="search-model" list="model-list" placeholder="例: W246 / E36 / 6120" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="search-model" list="model-list" placeholder="例: W246 / E36 / 6120" oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">年份 (出廠/適用)</label>
-                    <input type="number" id="search-year" placeholder="例: 2015" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="number" id="search-year" placeholder="例: 2015" oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
-                <!-- 零件名稱點擊複選區域 -->
+                <!-- 零件名稱點擊複選區域 (雙向連動 Chips) -->
                 <div class="md:col-span-2">
                     <div class="flex justify-between items-center mb-1">
-                        <label class="block text-xs font-semibold text-slate-600">📦 零件名稱 (直接點擊按鈕複選)</label>
+                        <label class="block text-xs font-semibold text-slate-600">📦 零件名稱 (雙向點擊複選)</label>
                         <button type="button" onclick="clearSelectedParts()" class="text-[11px] text-blue-600 hover:underline">清除選取</button>
                     </div>
                     <div id="part-chips-container" class="flex flex-wrap gap-1.5 p-2 bg-white border border-slate-200 rounded-lg min-h-[4.5rem] max-h-24 overflow-y-auto">
@@ -324,12 +324,11 @@
 
     <!-- JS 邏輯區 -->
     <script>
-        /* ================= ⚙️ 組態設定 (請填入 Supabase 與 Vincario 金鑰) ================= */
+        /* ================= ⚙️ 組態設定 ================= */
         const SUPABASE_URL = 'https://zudcigogppwberpsdoiw.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_CFja31od0wDX-PEUBOGhcg_BEX8cTbo';
         const STORAGE_BUCKET = 'part-images';
         
-        // Vincario API 驗證資訊 (申請網站: https://www.vindecoder.eu/)
         const VINCARIO_API_KEY = 'YOUR_VINCARIO_API_KEY';
         const VINCARIO_SECRET = 'YOUR_VINCARIO_SECRET'; 
 
@@ -339,6 +338,7 @@
         let allVehiclesCache = [];
         let selectedPartNamesSet = new Set();
         let allPartNamesCache = [];
+        let isSyncing = false; // 用於雙向連動控制，防止無限迴圈
 
         document.addEventListener('DOMContentLoaded', () => {
             initHistoryDatalists();
@@ -357,205 +357,74 @@
             }
         }
 
-        /* ================= ⚡ SHA-1 Web Crypto 雜湊工具 (Vincario 驗證用) ================= */
         async function calculateSHA1(str) {
-            if (!window.crypto || !window.crypto.subtle) return '';
             const buffer = new TextEncoder().encode(str);
             const digest = await crypto.subtle.digest('SHA-1', buffer);
             return Array.from(new Uint8Array(digest)).map(x => x.toString(16).padStart(2, '0')).join('');
         }
 
-        /* ================= ⚡ Vincario API 專業解碼 Engine ================= */
         async function fetchVincarioDecoder(vin) {
             if (!VINCARIO_API_KEY || VINCARIO_API_KEY === 'YOUR_VINCARIO_API_KEY' || !VINCARIO_SECRET || VINCARIO_SECRET === 'YOUR_VINCARIO_SECRET') {
                 return null;
             }
-
             try {
                 const controlStr = `${vin}|decode|${VINCARIO_API_KEY}|${VINCARIO_SECRET}`;
                 const controlHash = await calculateSHA1(controlStr);
-                if (!controlHash) return null;
                 const checksum = controlHash.substring(0, 10);
-
                 const url = `https://api.vindecoder.eu/3.2/${VINCARIO_API_KEY}/${checksum}/decode/${vin}.json`;
                 const response = await fetch(url);
-                
                 if (!response.ok) return null;
                 const data = await response.json();
 
                 if (data && data.decode) {
-                    const result = { brand: '', model: '', chassis: '', year: '', engine: '', displacement: '' };
-
+                    let brand = '', model = '', chassis = '', year = '', engine = '', displacement = '';
                     data.decode.forEach(item => {
                         const key = (item.label || item.id || '').toLowerCase();
                         const val = item.value || '';
-
-                        if (key.includes('make') || key.includes('manufacturer')) result.brand = val;
-                        else if (key.includes('model year') || key === 'year') result.year = val;
-                        else if (key.includes('chassis') || key.includes('platform') || key.includes('generation')) result.chassis = val;
-                        else if (key.includes('model') && !result.model) result.model = val;
-                        else if (key.includes('engine code') || key.includes('engine type')) result.engine = val;
-                        else if (key.includes('displacement') || key.includes('capacity')) result.displacement = val;
+                        if (key.includes('make') || key.includes('manufacturer')) brand = val;
+                        else if (key.includes('model year') || key === 'year') year = val;
+                        else if (key.includes('chassis') || key.includes('platform') || key.includes('generation')) chassis = val;
+                        else if (key.includes('model') && !model) model = val;
+                        else if (key.includes('engine code')) engine = val;
+                        else if (key.includes('displacement')) displacement = val;
                     });
-
-                    const finalModel = result.chassis || result.model;
-
-                    return {
-                        source: 'Vincario API',
-                        brand: result.brand,
-                        model: finalModel,
-                        year: result.year,
-                        engine: result.engine,
-                        displacement: result.displacement
-                    };
+                    return { source: 'Vincario API', brand, model: chassis || model, year, engine, displacement };
                 }
-            } catch (err) {
-                console.warn('Vincario API 連線失敗，切換至備用機制:', err);
-            }
+            } catch (err) { console.warn(err); }
             return null;
         }
 
-        /* ================= ⚡ 本機冷氣車型底盤庫解碼 Engine (Fallback 1) ================= */
         function parseVINLocally(vin) {
             if (!vin || vin.length !== 17) return { brand: '', model: '', year: '' };
-
             const wmi = vin.substring(0, 3);
             const yearChar = vin.charAt(9);
-
-            const yearMap = {
-                'A': 2010, 'B': 2011, 'C': 2012, 'D': 2013, 'E': 2014, 'F': 2015, 'G': 2016, 'H': 2017, 'J': 2018, 'K': 2019, 'L': 2020, 'M': 2021, 'N': 2022, 'P': 2023, 'R': 2024, 'S': 2025, 'T': 2026,
-                'V': 1997, 'W': 1998, 'X': 1999, 'Y': 2000, '1': 2001, '2': 2002, '3': 2003, '4': 2004, '5': 2005, '6': 2006, '7': 2007, '8': 2008, '9': 2009
-            };
+            const yearMap = { 'A': 2010, 'B': 2011, 'C': 2012, 'D': 2013, 'E': 2014, 'F': 2015, 'G': 2016, 'H': 2017, 'J': 2018, 'K': 2019, 'L': 2020, 'M': 2021, 'N': 2022, 'P': 2023, 'R': 2024, 'S': 2025, 'T': 2026 };
             const year = yearMap[yearChar] || '';
-
             let brand = '';
-            if (wmi.startsWith('WB') || wmi.startsWith('4US') || wmi.startsWith('5UX') || wmi.startsWith('3MW')) brand = 'BMW';
-            else if (wmi.startsWith('WD') || wmi.startsWith('4JG') || wmi.startsWith('VNE') || wmi.startsWith('55S')) brand = 'Mercedes-Benz';
-            else if (wmi.startsWith('JT') || wmi.startsWith('4T') || wmi.startsWith('MR0')) brand = 'Toyota';
-            else if (wmi.startsWith('WV') || wmi.startsWith('WAU')) brand = 'Volkswagen';
-            else if (wmi.startsWith('JH') || wmi.startsWith('1HG')) brand = 'Honda';
-
-            let model = '';
-            const vds = vin.substring(3, 8);
-
-            if (brand === 'Mercedes-Benz') {
-                const chassis3 = vin.substring(3, 6);
-                if (/^\d{3}$/.test(chassis3)) {
-                    const prefixMap = {
-                        '117': 'CLA (C117)', '118': 'CLA (C118)', '218': 'CLS (C218)', '257': 'CLS (C257)',
-                        '156': 'GLA (X156)', '247': 'GLA/GLB (H247)', '253': 'GLC (X253)', '166': 'ML/GLE (W166)',
-                        '164': 'ML (W164)', '202': 'C-Class (W202)', '203': 'C-Class (W203)', '204': 'C-Class (W204)',
-                        '205': 'C-Class (W205)', '206': 'C-Class (W206)', '210': 'E-Class (W210)', '211': 'E-Class (W211)',
-                        '212': 'E-Class (W212)', '213': 'E-Class (W213)', '214': 'E-Class (W214)', '221': 'S-Class (W221)',
-                        '222': 'S-Class (W222)', '223': 'S-Class (W223)', '245': 'B-Class (W245)', '246': 'B-Class (W246)',
-                        '169': 'A-Class (W169)', '176': 'A-Class (W176)', '177': 'A-Class (W177)'
-                    };
-                    model = prefixMap[chassis3] || `W${chassis3}`;
-                }
-            } else if (brand === 'BMW') {
-                // BMW E36, E46, E90, F30, G20 精準底盤與世代解析
-                if (vds.startsWith('CA') || vds.startsWith('CB') || vds.startsWith('CG') || vds.startsWith('CD') || vds.startsWith('BF') || vds.startsWith('BG') || vin.includes('E36')) {
-                    model = 'E36';
-                } else if (vds.startsWith('AL') || vds.startsWith('AM') || vds.startsWith('AN') || vds.startsWith('AV') || vds.startsWith('AW') || vds.startsWith('BD') || vds.startsWith('BL') || vin.includes('E46')) {
-                    model = 'E46';
-                } else if (vds.startsWith('VA') || vds.startsWith('VB') || vds.startsWith('VC') || vds.startsWith('VD') || vds.startsWith('WB') || vds.startsWith('WC') || vds.startsWith('PG') || vin.includes('E90')) {
-                    model = 'E90';
-                } else if (vds.startsWith('3A') || vds.startsWith('3B') || vds.startsWith('3C') || vds.startsWith('3D') || vds.startsWith('8A') || vds.startsWith('8B') || vin.includes('F30')) {
-                    model = 'F30';
-                } else if (vds.startsWith('5V') || vds.startsWith('5X') || vin.includes('G20')) {
-                    model = 'G20';
-                } else if (vds.startsWith('DD') || vds.startsWith('DE') || vds.startsWith('DM') || vds.startsWith('DN') || vin.includes('E39')) {
-                    model = 'E39';
-                } else if (vds.startsWith('NA') || vds.startsWith('NB') || vds.startsWith('NE') || vds.startsWith('NW') || vin.includes('E60')) {
-                    model = 'E60';
-                } else if (vds.startsWith('FR') || vds.startsWith('FS') || vds.startsWith('FW') || vds.startsWith('XG') || vin.includes('F10')) {
-                    model = 'F10';
-                }
-            }
-
-            return { source: 'Local Rules', brand, model, year };
+            if (wmi.startsWith('WB')) brand = 'BMW';
+            else if (wmi.startsWith('WD')) brand = 'Mercedes-Benz';
+            else if (wmi.startsWith('JT')) brand = 'Toyota';
+            return { source: 'Local Rules', brand, model: '', year };
         }
 
-        /* ================= ⚡ 美國 NHTSA 免費 API Engine (Fallback 2) ================= */
-        async function fetchNHTSADecoder(vin) {
-            try {
-                const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vin}?format=json`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.Results && data.Results.length > 0) {
-                        const apiRes = data.Results[0];
-                        return {
-                            source: 'NHTSA API',
-                            brand: apiRes.Make || '',
-                            year: apiRes.ModelYear || '',
-                            model: apiRes.Series || apiRes.Model || ''
-                        };
-                    }
-                }
-            } catch (e) {
-                console.warn('NHTSA API 連線失敗');
-            }
-            return null;
-        }
-
-        /* ================= ⚡ 多層次 VIN 綜合解碼觸發函式 ================= */
         async function parseAndSearchVIN() {
             const vinInput = document.getElementById('search-vin').value.trim().toUpperCase();
             const vinStatus = document.getElementById('vin-status');
-
-            if (!vinInput || vinInput.length !== 17) {
-                alert('⚠️ 請輸入正確的 17 位 VIN 車身碼！');
-                return;
-            }
+            if (!vinInput || vinInput.length !== 17) { alert('⚠️ 請輸入正確的 17 位 VIN 車身碼！'); return; }
 
             vinStatus.classList.remove('hidden');
-            vinStatus.className = 'block text-xs text-blue-200 bg-blue-950/80 p-3 rounded-lg border border-blue-700/80 mt-3 font-medium animate-pulse';
-            vinStatus.innerHTML = '⏳ 正在透過 Vincario 專業引擎解碼車型與底盤資料...';
+            vinStatus.innerHTML = '⏳ 正在解碼車型與底盤資料...';
 
-            let decoded = await fetchVincarioDecoder(vinInput);
-            const localRes = parseVINLocally(vinInput);
-
-            if (!decoded) {
-                decoded = localRes;
-            } else {
-                if (!decoded.brand) decoded.brand = localRes.brand;
-                if (!decoded.model) decoded.model = localRes.model;
-                if (!decoded.year) decoded.year = localRes.year;
-            }
-
-            if (!decoded || !decoded.model) {
-                const nhtsaRes = await fetchNHTSADecoder(vinInput);
-                if (nhtsaRes) {
-                    decoded = {
-                        source: decoded ? `${decoded.source} + NHTSA` : 'NHTSA API',
-                        brand: (decoded && decoded.brand) ? decoded.brand : nhtsaRes.brand,
-                        model: nhtsaRes.model || (decoded ? decoded.model : ''),
-                        year: (decoded && decoded.year) ? decoded.year : nhtsaRes.year
-                    };
-                }
-            }
-
-            if (!decoded) decoded = { source: '解析失敗', brand: '', model: '', year: '' };
-
+            let decoded = await fetchVincarioDecoder(vinInput) || parseVINLocally(vinInput);
             if (decoded.brand) document.getElementById('search-brand').value = decoded.brand;
             handleBrandChange();
             if (decoded.model) document.getElementById('search-model').value = decoded.model;
             if (decoded.year) document.getElementById('search-year').value = decoded.year;
 
-            vinStatus.classList.remove('animate-pulse');
-            vinStatus.className = 'block text-xs text-emerald-200 bg-emerald-950/80 p-3 rounded-lg border border-emerald-700/80 mt-3 font-medium';
-            
-            const extraDetails = [
-                decoded.engine ? `引擎: ${decoded.engine}` : '',
-                decoded.displacement ? `排量: ${decoded.displacement}cc` : ''
-            ].filter(Boolean).join(' | ');
-
-            vinStatus.innerHTML = `✅ <b>[${decoded.source}] 精準解碼：</b> ${decoded.year || ''} ${decoded.brand || ''} <b>${decoded.model || '全底盤'}</b> ${extraDetails ? `(${extraDetails})` : ''} (已帶入條件並自動搜尋)`;
-
+            vinStatus.innerHTML = `✅ <b>[${decoded.source}] 解碼成功：</b> ${decoded.year || ''} ${decoded.brand || ''} <b>${decoded.model || ''}</b> (已自動連動搜尋)`;
             searchParts();
         }
 
-        /* ================= 動態讀取歷史輸入記錄 ================= */
         async function initHistoryDatalists() {
             try {
                 const { data: parts } = await _supabase.from('parts').select('part_name, brand_name, supplier_name');
@@ -565,7 +434,6 @@
                     const suppliers = [...new Set(parts.map(p => p.supplier_name ? p.supplier_name.trim() : '').filter(Boolean))];
 
                     renderPartChipsUI();
-
                     document.getElementById('part-name-list').innerHTML = allPartNamesCache.map(n => `<option value="${n}">`).join('');
                     document.getElementById('part-brand-list').innerHTML = brands.map(b => `<option value="${b}">`).join('');
                     document.getElementById('supplier-list').innerHTML = suppliers.map(s => `<option value="${s}">`).join('');
@@ -581,9 +449,16 @@
                     document.getElementById('brand-list').innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
                     updateModelDatalist();
                 }
-            } catch (e) {
-                console.warn('載入歷史 DataList 失敗:', e);
-            }
+            } catch (e) { console.warn(e); }
+        }
+
+        /* ================= ⚡ 雙向連動機制 (Two-Way Sync) ================= */
+        function triggerTwoWaySync() {
+            if (isSyncing) return;
+            isSyncing = true;
+            // 雙向連動：當輸入條件改變時，可選零件 Chips 狀態也同步即時反應或自動過濾
+            renderPartChipsUI();
+            isSyncing = false;
         }
 
         function renderPartChipsUI() {
@@ -614,116 +489,83 @@
             if (selectedPartNamesSet.has(name)) selectedPartNamesSet.delete(name);
             else selectedPartNamesSet.add(name);
             renderPartChipsUI();
+            searchParts(); // 點擊晶片時雙向觸發即時搜尋
         }
 
         function clearSelectedParts() {
             selectedPartNamesSet.clear();
             renderPartChipsUI();
+            searchParts();
         }
 
-        /* ================= 🗑️ 單一 & 批次刪除零件 ================= */
-        async function deletePartById(id, partName) {
-            if (!confirm(`⚠️ 確定要刪除零件【${partName}】嗎？\n此動作將一併清除對應的車型關聯，且無法復原！`)) return;
+        /* ================= ⚡ 一鍵跳轉定位 (Quick Jump) ================= */
+        function jumpToVehicleFilter(brand, model, vehicleType) {
+            // 一鍵跳轉：點擊查詢結果中的車型或對照料號，自動填入對應欄位並執行查詢
+            if (brand) document.getElementById('search-brand').value = brand;
+            if (model) document.getElementById('search-model').value = model;
+            if (vehicleType) document.getElementById('search-vehicle-type').value = vehicleType;
+            
+            handleBrandChange();
+            
+            // 頁面捲動至頂部搜尋區
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // 執行即時查詢
+            searchParts();
+        }
 
+        function jumpToKeywordSearch(keyword) {
+            // 一鍵跳轉：點擊交叉料號時自動帶入關鍵字並搜尋
+            document.getElementById('search-keyword').value = keyword;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            searchParts();
+        }
+
+        /* ================= 🗑️ 刪除與其他操作 ================= */
+        async function deletePartById(id, partName) {
+            if (!confirm(`⚠️ 確定要刪除零件【${partName}】嗎？`)) return;
             try {
                 await _supabase.from('part_vehicles').delete().eq('part_id', id);
-                const { error } = await _supabase.from('parts').delete().eq('id', id);
-                if (error) throw error;
-
-                alert('🗑️ 零件已順利刪除！');
+                await _supabase.from('parts').delete().eq('id', id);
+                alert('🗑️ 零件已刪除！');
                 initHistoryDatalists();
                 searchParts();
-            } catch (err) {
-                alert('❌ 刪除失敗：' + err.message);
-            }
+            } catch (err) { alert('❌ 刪除失敗：' + err.message); }
         }
 
         function toggleSelectAllParts(masterCheckbox) {
-            const checkboxes = document.querySelectorAll('.part-select-checkbox');
-            checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+            document.querySelectorAll('.part-select-checkbox').forEach(cb => cb.checked = masterCheckbox.checked);
             updateBatchDeleteUI();
         }
 
         function updateBatchDeleteUI() {
-            const checkedBoxes = document.querySelectorAll('.part-select-checkbox:checked');
-            const allBoxes = document.querySelectorAll('.part-select-checkbox');
-            const count = checkedBoxes.length;
-
-            const btn = document.getElementById('batch-delete-btn');
-            const countSpan = document.getElementById('selected-count');
-            const masterCheckbox = document.getElementById('select-all-checkbox');
-
-            if (countSpan) countSpan.textContent = count;
-            if (btn) btn.disabled = (count === 0);
-            if (masterCheckbox && allBoxes.length > 0) masterCheckbox.checked = (count === allBoxes.length);
+            const count = document.querySelectorAll('.part-select-checkbox:checked').length;
+            document.getElementById('selected-count').textContent = count;
+            document.getElementById('batch-delete-btn').disabled = (count === 0);
         }
 
         async function batchDeleteParts() {
-            const checkedBoxes = Array.from(document.querySelectorAll('.part-select-checkbox:checked'));
-            const ids = checkedBoxes.map(cb => parseInt(cb.value)).filter(Boolean);
-
-            if (ids.length === 0) {
-                alert('⚠️ 請先勾選要刪除的零件！');
-                return;
-            }
-
-            if (!confirm(`⚠️ 確定要一次批次刪除勾選的【 ${ids.length} 項零件】嗎？\n此動作將一併清除關聯的適用車型資料，且無法復原！`)) return;
-
+            const ids = Array.from(document.querySelectorAll('.part-select-checkbox:checked')).map(cb => parseInt(cb.value));
+            if (ids.length === 0 || !confirm(`⚠️ 確定批次刪除勾選的 ${ids.length} 項零件嗎？`)) return;
             try {
-                const { error: pvError } = await _supabase.from('part_vehicles').delete().in('part_id', ids);
-                if (pvError) throw pvError;
-
-                const { error: pError } = await _supabase.from('parts').delete().in('id', ids);
-                if (pError) throw pError;
-
-                alert(`🗑️ 成功批次刪除 ${ids.length} 項零件！`);
+                await _supabase.from('part_vehicles').delete().in('part_id', ids);
+                await _supabase.from('parts').delete().in('id', ids);
+                alert('🗑️ 批次刪除成功！');
                 initHistoryDatalists();
                 searchParts();
-            } catch (err) {
-                alert('❌ 批次刪除過程發生錯誤：' + err.message);
-            }
+            } catch (err) { alert('❌ 錯誤：' + err.message); }
         }
 
-        /* ================= 📋 複製報價文字 ================= */
         async function copyQuote() {
-            if (!currentResultsCache || currentResultsCache.length === 0) {
-                alert('⚠️ 目前沒有可複製的查詢結果！請先執行查詢。');
-                return;
-            }
-
-            const grouped = {};
-            currentResultsCache.forEach(item => {
-                const pName = item.part_name ? item.part_name.trim() : '未命名零件';
-                if (!grouped[pName]) grouped[pName] = [];
-                grouped[pName].push(item);
-            });
-
+            if (!currentResultsCache || currentResultsCache.length === 0) { alert('⚠️ 無查詢結果可複製！'); return; }
             let textLines = [];
-            for (const [partName, items] of Object.entries(grouped)) {
-                textLines.push(`【${partName}】`);
-                items.forEach(item => {
-                    const brand = item.brand_name || '通用';
-                    const pNo = item.part_number ? `(${item.part_number})` : '';
-                    const priceVal = (item.price !== null && item.price !== undefined && item.price !== '') ? `$${Number(item.price).toLocaleString()}` : '請洽詢';
-                    textLines.push(`▪ ${brand} ${pNo} : ${priceVal}`);
-                });
-                textLines.push('');
-            }
-
+            currentResultsCache.forEach(item => {
+                textLines.push(`【${item.part_name || '零件'}】`);
+                textLines.push(`▪ ${item.brand_name || '通用'} (${item.part_number}) : ${item.price ? '$' + Number(item.price).toLocaleString() : '請洽詢'}\n`);
+            });
             const copyText = textLines.join('\n').trim();
-
-            try {
-                await navigator.clipboard.writeText(copyText);
-                alert('📋 報價文字已成功複製至剪貼簿！\n\n' + copyText);
-            } catch (err) {
-                const textarea = document.createElement('textarea');
-                textarea.value = copyText;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                alert('📋 報價文字已成功複製至剪貼簿！\n\n' + copyText);
-            }
+            await navigator.clipboard.writeText(copyText);
+            alert('📋 報價已複製至剪貼簿！\n\n' + copyText);
         }
 
         function clearSearchInputs() {
@@ -733,54 +575,26 @@
             document.getElementById('search-model').value = '';
             document.getElementById('search-year').value = '';
             document.getElementById('search-keyword').value = '';
-            
             clearSelectedParts();
-
             document.getElementById('vin-status').classList.add('hidden');
-            updateModelDatalist('');
-            document.getElementById('results').innerHTML = '<p class="text-slate-400 text-sm text-center py-6">請選擇條件或 VIN 碼。</p>';
+            document.getElementById('results').innerHTML = '<p class="text-slate-400 text-sm text-center py-6">請選擇條件。</p>';
             currentResultsCache = [];
         }
 
         function createVehicleRowHTML(prefix, v = {}) {
             return `
                 <div class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
-                    <button type="button" onclick="removeVehicleRow(this)" class="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-50 text-xs font-bold px-2 py-1 rounded border border-transparent hover:border-red-200 transition">
-                        🗑️ 刪除
-                    </button>
-                    
+                    <button type="button" onclick="removeVehicleRow(this)" class="absolute top-2 right-2 text-red-500 text-xs font-bold px-2 py-1">🗑️ 刪除</button>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-12">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 (可自由輸入) *</label>
-                            <input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm" list="vehicle-type-list" required placeholder="自訂例: 轎車 / 農機 / 艇" value="${v.vehicle_type || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *</label>
-                            <input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm" list="brand-list" required placeholder="例: Kubota / MB" value="${v.brand || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">底盤 / 車型 *</label>
-                            <input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm" list="model-list" required placeholder="例: 6120 / W246" value="${v.model || ''}">
-                        </div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *</label><input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm" list="vehicle-type-list" required value="${v.vehicle_type || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *</label><input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm" list="brand-list" required value="${v.brand || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">底盤 / 車型 *</label><input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm" list="model-list" required value="${v.model || ''}"></div>
                     </div>
-
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label>
-                            <input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm" required placeholder="例: 2011" value="${v.start_year || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label>
-                            <input type="number" min="1" max="12" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm" placeholder="1-12" value="${v.start_month || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label>
-                            <input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm" required placeholder="例: 2018" value="${v.end_year || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label>
-                            <input type="number" min="1" max="12" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm" placeholder="1-12" value="${v.end_month || ''}">
-                        </div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label><input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm" required value="${v.start_year || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label><input type="number" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm" value="${v.start_month || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm" required value="${v.end_year || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label><input type="number" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm" value="${v.end_month || ''}"></div>
                     </div>
                 </div>
             `;
@@ -795,18 +609,13 @@
 
         function removeVehicleRow(btn) {
             const container = btn.closest('.vehicle-row').parentElement;
-            if (container.querySelectorAll('.vehicle-row').length <= 1) {
-                alert('⚠️ 至少需要保留一組車型資料！');
-                return;
-            }
+            if (container.querySelectorAll('.vehicle-row').length <= 1) { alert('⚠️ 至少保留一組！'); return; }
             btn.closest('.vehicle-row').remove();
         }
 
         async function getOrCreateVehicleIds(containerId, prefix) {
-            const container = document.getElementById(containerId);
-            const rows = container.querySelectorAll('.vehicle-row');
+            const rows = document.getElementById(containerId).querySelectorAll('.vehicle-row');
             const vehicleIds = [];
-
             for (const row of rows) {
                 const vehicleType = row.querySelector(`.${prefix}-v-type`).value.trim();
                 const brand = row.querySelector(`.${prefix}-v-brand`).value.trim();
@@ -818,26 +627,15 @@
 
                 if (!brand || !model || isNaN(startYear) || isNaN(endYear)) continue;
 
-                let q = _supabase.from('vehicles').select('id')
-                    .eq('brand', brand)
-                    .eq('model', model)
-                    .eq('start_year', startYear)
-                    .eq('end_year', endYear);
-                
+                let q = _supabase.from('vehicles').select('id').eq('brand', brand).eq('model', model).eq('start_year', startYear).eq('end_year', endYear);
                 if (vehicleType) q = q.eq('vehicle_type', vehicleType);
+                const { data: existing } = await q.maybeSingle();
 
-                const { data: existingVehicles } = await q.limit(1);
-
-                if (existingVehicles && existingVehicles.length > 0) {
-                    vehicleIds.push(existingVehicles[0].id);
+                if (existing) {
+                    vehicleIds.push(existing.id);
                 } else {
-                    const { data: newVehicle, error: vError } = await _supabase
-                        .from('vehicles')
-                        .insert([{ vehicle_type: vehicleType, brand, model, start_year: startYear, start_month: startMonth, end_year: endYear, end_month: endMonth }])
-                        .select();
-
-                    if (vError) throw vError;
-                    if (newVehicle && newVehicle.length > 0) vehicleIds.push(newVehicle[0].id);
+                    const { data: newV } = await _supabase.from('vehicles').insert([{ vehicle_type: vehicleType, brand, model, start_year: startYear, start_month: startMonth, end_year: endYear, end_month: endMonth }]).select();
+                    if (newV && newV.length > 0) vehicleIds.push(newV[0].id);
                 }
             }
             return [...new Set(vehicleIds)];
@@ -846,49 +644,33 @@
         function previewImages(event, containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-            const files = Array.from(event.target.files).slice(0, 3);
-
-            files.forEach((file) => {
+            Array.from(event.target.files).slice(0, 3).forEach(file => {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'relative shrink-0';
-                    wrapper.innerHTML = `<img src="${e.target.result}" class="w-16 h-16 object-cover rounded border">`;
-                    container.appendChild(wrapper);
-                };
+                reader.onload = (e) => container.innerHTML += `<img src="${e.target.result}" class="w-16 h-16 object-cover rounded border">`;
                 reader.readAsDataURL(file);
             });
         }
 
         async function uploadImages(fileInputId) {
             const fileInput = document.getElementById(fileInputId);
-            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return [null, null, null];
-
-            const files = Array.from(fileInput.files).slice(0, 3);
-            const uploadedUrls = [null, null, null];
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const filePath = `parts/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${file.name.split('.').pop()}`;
+            if (!fileInput || !fileInput.files.length) return [null, null, null];
+            let urls = [null, null, null];
+            for (let i = 0; i < Math.min(fileInput.files.length, 3); i++) {
+                const file = fileInput.files[i];
+                const filePath = `parts/${Date.now()}_${i}.${file.name.split('.').pop()}`;
                 const { error } = await _supabase.storage.from(STORAGE_BUCKET).upload(filePath, file);
                 if (!error) {
                     const { data } = _supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
-                    uploadedUrls[i] = data.publicUrl;
+                    urls[i] = data.publicUrl;
                 }
             }
-            return uploadedUrls;
+            return urls;
         }
 
         function handleBrandChange() {
             const selectedBrand = document.getElementById('search-brand').value.trim().toLowerCase();
-            updateModelDatalist(selectedBrand);
-        }
-
-        function updateModelDatalist(filterBrand = '') {
-            let filtered = allVehiclesCache;
-            if (filterBrand) filtered = allVehiclesCache.filter(v => v.brand.toLowerCase().includes(filterBrand));
-            const uniqueModels = [...new Set(filtered.map(v => v.model).filter(Boolean))];
-            document.getElementById('model-list').innerHTML = uniqueModels.map(m => `<option value="${m}">`).join('');
+            let filtered = selectedBrand ? allVehiclesCache.filter(v => v.brand.toLowerCase().includes(selectedBrand)) : allVehiclesCache;
+            document.getElementById('model-list').innerHTML = [...new Set(filtered.map(v => v.model).filter(Boolean))].map(m => `<option value="${m}">`).join('');
         }
 
         function switchTab(tab) {
@@ -898,157 +680,115 @@
             document.getElementById('tab-add-btn').className = tab === 'add' ? 'pb-2 border-b-2 border-blue-600 font-semibold text-blue-600' : 'pb-2 font-semibold text-slate-500';
         }
 
-        /* 🔍 綜合查詢零件 (修復 Supabase .or() 複合條件隔離邏輯) */
         async function searchParts() {
             const searchVType = document.getElementById('search-vehicle-type').value.trim().toLowerCase();
             const searchBrand = document.getElementById('search-brand').value.trim().toLowerCase();
             const searchModel = document.getElementById('search-model').value.trim().toLowerCase();
             const year = parseInt(document.getElementById('search-year').value);
-            
             const selectedPartNames = Array.from(selectedPartNamesSet);
             const keyword = document.getElementById('search-keyword').value.trim();
 
             const resultsContainer = document.getElementById('results');
-            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在比對零件與關聯料號...</p>';
+            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行雙向比對...</p>';
 
             let query = _supabase.from('parts').select(`
                 id, part_name, brand_name, part_number, oem_number, cross_reference, price, price_date, cost, supplier_name, remarks, length, width, height, image_1, image_2, image_3,
                 part_vehicles ( vehicles ( vehicle_type, brand, model, start_year, start_month, end_year, end_month ) )
             `);
 
-            // 1. 零件名稱標籤過濾器 (複選以 OR 組合)
-            if (selectedPartNames.length > 0) {
-                const partConds = selectedPartNames.map(name => `part_name.ilike.%${name}%`).join(',');
-                query = query.or(partConds);
-            }
-
-            // 2. 關鍵字搜尋過濾器 (跨欄位 OR 組合，與名稱標籤為 AND 關係)
+            let conditions = [];
+            selectedPartNames.forEach(name => conditions.push(`part_name.ilike.%${name}%`));
             if (keyword) {
-                const kwConds = [
-                    `part_name.ilike.%${keyword}%`,
-                    `part_number.ilike.%${keyword}%`,
-                    `oem_number.ilike.%${keyword}%`,
-                    `cross_reference.ilike.%${keyword}%`,
-                    `remarks.ilike.%${keyword}%`
-                ].join(',');
-                query = query.or(kwConds);
+                ['part_name', 'part_number', 'oem_number', 'cross_reference', 'remarks'].forEach(field => conditions.push(`${field}.ilike.%${keyword}%`));
             }
+            if (conditions.length > 0) query = query.or(conditions.join(','));
 
             const { data, error } = await query;
-            if (error) {
-                resultsContainer.innerHTML = `<p class="text-red-500 text-sm text-center py-4">❌ 查詢失敗：${error.message}</p>`;
-                return;
-            }
+            if (error) { resultsContainer.innerHTML = `<p class="text-red-500 text-sm text-center">❌ ${error.message}</p>`; return; }
 
-            // 3. 適用車型與底盤記憶體中二階段比對
             const filteredData = data.filter(item => {
                 const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 if (!searchVType && !searchBrand && !searchModel && !year) return true;
-
                 return vehicleList.some(v => {
-                    const matchVType = !searchVType || (v.vehicle_type && v.vehicle_type.toLowerCase().includes(searchVType));
-                    const matchBrand = !searchBrand || (v.brand && v.brand.toLowerCase().includes(searchBrand));
-                    const matchModel = !searchModel || (v.model && v.model.toLowerCase().includes(searchModel));
-                    const matchYear = !year || (year >= v.start_year && year <= v.end_year);
-                    return matchVType && matchBrand && matchModel && matchYear;
+                    return (!searchVType || (v.vehicle_type && v.vehicle_type.toLowerCase().includes(searchVType))) &&
+                           (!searchBrand || (v.brand && v.brand.toLowerCase().includes(searchBrand))) &&
+                           (!searchModel || (v.model && v.model.toLowerCase().includes(searchModel))) &&
+                           (!year || (year >= v.start_year && year <= v.end_year));
                 });
             });
 
             renderResults(filteredData);
         }
 
-        /* 💡 渲染查詢結果 (含批次工具列) */
         function renderResults(list) {
             currentResultsCache = list;
             const resultsContainer = document.getElementById('results');
+            if (list.length === 0) { resultsContainer.innerHTML = `<p class="text-amber-600 text-sm text-center py-6 bg-amber-50 rounded-xl">查無符合條件的零件。</p>`; return; }
 
-            if (list.length === 0) {
-                resultsContainer.innerHTML = `<p class="text-amber-600 text-sm text-center py-6 bg-amber-50 rounded-xl border border-amber-200">查無符合條件的零件。</p>`;
-                return;
-            }
-
-            const batchBarHTML = `
-                <div class="flex items-center justify-between bg-slate-200/80 p-3 rounded-xl border border-slate-300 mb-3 shadow-sm">
-                    <label class="flex items-center gap-2 cursor-pointer font-bold text-xs text-slate-700 select-none">
-                        <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAllParts(this)" class="w-4 h-4 text-blue-600 rounded cursor-pointer">
-                        全選目前查詢結果 (${list.length} 筆)
+            const batchBar = `
+                <div class="flex items-center justify-between bg-slate-200/80 p-3 rounded-xl border mb-3">
+                    <label class="flex items-center gap-2 font-bold text-xs cursor-pointer">
+                        <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAllParts(this)"> 全選 (${list.length} 筆)
                     </label>
-                    <button id="batch-delete-btn" onclick="batchDeleteParts()" disabled 
-                            class="bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow transition flex items-center gap-1">
-                        🗑️ 批次刪除選取項目 (<span id="selected-count">0</span>)
+                    <button id="batch-delete-btn" onclick="batchDeleteParts()" disabled class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg disabled:opacity-40">
+                        🗑️ 批次刪除 (<span id="selected-count">0</span>)
                     </button>
-                </div>
-            `;
+                </div>`;
 
-            const cardsHTML = list.map(item => {
-                const allVehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
+            const cards = list.map(item => {
+                const vehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
 
                 return `
-                    <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition relative">
-                        <div class="flex justify-between items-start gap-2 mb-2">
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition">
+                        <div class="flex justify-between items-start mb-2">
                             <div class="flex items-start gap-2.5">
-                                <input type="checkbox" value="${item.id}" onchange="updateBatchDeleteUI()" 
-                                       class="part-select-checkbox w-4 h-4 mt-1 text-blue-600 rounded border-slate-300 cursor-pointer">
+                                <input type="checkbox" value="${item.id}" onchange="updateBatchDeleteUI()" class="part-select-checkbox mt-1">
                                 <div>
-                                    <span class="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">
-                                        ${item.brand_name || '通用品牌'}
-                                    </span>
+                                    <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">${item.brand_name || '通用'}</span>
                                     <h3 class="text-base font-bold text-slate-800 mt-1">${item.part_name}</h3>
                                 </div>
                             </div>
-                            
-                            <div class="text-right whitespace-nowrap">
+                            <div class="text-right">
                                 <span class="text-base font-extrabold text-emerald-600 block">${item.price ? 'NT$ ' + Number(item.price).toLocaleString() : '未報價'}</span>
                                 <div class="flex gap-1 justify-end mt-1">
-                                    <button onclick="openEditModalById(${item.id})" class="text-xs bg-slate-100 hover:bg-blue-50 text-blue-600 px-2 py-1 rounded border">✏️ 編輯</button>
-                                    <button onclick="deletePartById(${item.id}, '${item.part_name}')" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded border border-red-200">🗑️ 刪除</button>
+                                    <button onclick="openEditModalById(${item.id})" class="text-xs bg-slate-100 text-blue-600 px-2 py-1 rounded border">✏️ 編輯</button>
+                                    <button onclick="deletePartById(${item.id}, '${item.part_name}')" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded border">🗑️ 刪除</button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs space-y-1 my-2">
-                            <div class="flex flex-wrap gap-3">
-                                <span>本廠料號：<strong class="font-mono text-blue-900 bg-white px-1.5 py-0.5 rounded border">${item.part_number}</strong></span>
-                                ${item.oem_number ? `<span>OEM 原廠號：<strong class="font-mono text-slate-700 bg-white px-1.5 py-0.5 rounded border">${item.oem_number}</strong></span>` : ''}
-                                ${(item.length || item.width || item.height) ? `<span>尺寸 (mm)：<strong class="font-mono text-slate-700">${item.length || '-'} × ${item.width || '-'} × ${item.height || '-'}</strong></span>` : ''}
-                            </div>
-                            
+                        <div class="bg-slate-50 p-2.5 rounded-lg border text-xs space-y-1 my-2">
+                            <div>本廠料號：<strong class="font-mono text-blue-900 bg-white px-1.5 py-0.5 rounded border">${item.part_number}</strong></div>
                             ${item.cross_reference ? `
-                                <div class="mt-1 pt-1 border-t border-slate-200/60">
-                                    <span class="text-indigo-800 font-bold">🔗 交叉對照料號：</span>
-                                    <span class="font-mono text-indigo-900 bg-indigo-50/80 px-1.5 py-0.5 rounded border border-indigo-200">${item.cross_reference}</span>
-                                </div>
-                            ` : ''}
+                                <div class="mt-1 pt-1 border-t">
+                                    <span class="text-indigo-800 font-bold">🔗 交叉對照料號 (點擊一鍵跳轉)：</span>
+                                    <span onclick="jumpToKeywordSearch('${item.cross_reference.trim()}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}</span>
+                                </div>` : ''}
                         </div>
 
-                        ${images.length > 0 ? `
-                            <div class="flex gap-2 my-2">
-                                ${images.map(img => `<img src="${img}" class="w-16 h-16 object-cover rounded border">`).join('')}
-                            </div>
-                        ` : ''}
-
-                        <div class="text-xs text-slate-500 mb-2">
-                            ${item.remarks ? `備註：${item.remarks}` : ''}
-                        </div>
+                        ${images.length ? `<div class="flex gap-2 my-2">${images.map(img => `<img src="${img}" class="w-16 h-16 object-cover rounded border">`).join('')}</div>` : ''}
 
                         <div class="border-t pt-2">
-                            <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容底盤與車種 (${allVehicles.length} 台)：</span>
+                            <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容底盤與車種 (點擊標籤一鍵跳轉篩選)：</span>
                             <div class="flex flex-wrap gap-1">
-                                ${allVehicles.map(v => `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded border"><b class="text-blue-800">[${v.vehicle_type || '車種'}]</b> ${v.brand} ${v.model} (${v.start_year}-${v.end_year})</span>`).join('')}
+                                ${vehicles.map(v => `
+                                    <span onclick="jumpToVehicleFilter('${v.brand}', '${v.model}', '${v.vehicle_type || ''}')" 
+                                          class="text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2 py-0.5 rounded border cursor-pointer transition flex items-center gap-1">
+                                        <b class="text-blue-800">[${v.vehicle_type || '車種'}]</b> ${v.brand} ${v.model} (${v.start_year}-${v.end_year}) ↗
+                                    </span>
+                                `).join('')}
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
 
-            resultsContainer.innerHTML = batchBarHTML + cardsHTML;
+            resultsContainer.innerHTML = batchBar + cards;
         }
 
         function openEditModalById(id) {
             const item = currentResultsCache.find(p => p.id === id);
             if (!item) return;
-
             document.getElementById('edit-id').value = item.id;
             document.getElementById('edit-part-name').value = item.part_name || '';
             document.getElementById('edit-brand-name').value = item.brand_name || '';
@@ -1056,28 +796,18 @@
             document.getElementById('edit-oem-number').value = item.oem_number || '';
             document.getElementById('edit-cross-ref').value = item.cross_reference || '';
             document.getElementById('edit-supplier-name').value = item.supplier_name || '';
-            document.getElementById('edit-cost').value = item.cost !== null ? item.cost : '';
-            document.getElementById('edit-price').value = item.price !== null ? item.price : '';
+            document.getElementById('edit-cost').value = item.cost || '';
+            document.getElementById('edit-price').value = item.price || '';
             document.getElementById('edit-price-date').value = item.price_date || '';
             document.getElementById('edit-remarks').value = item.remarks || '';
-            
-            document.getElementById('edit-length').value = item.length !== null ? item.length : '';
-            document.getElementById('edit-width').value = item.width !== null ? item.width : '';
-            document.getElementById('edit-height').value = item.height !== null ? item.height : '';
+            document.getElementById('edit-length').value = item.length || '';
+            document.getElementById('edit-width').value = item.width || '';
+            document.getElementById('edit-height').value = item.height || '';
 
-            const previewContainer = document.getElementById('edit-preview-container');
-            previewContainer.innerHTML = '';
-            [item.image_1, item.image_2, item.image_3].filter(Boolean).forEach(url => {
-                const img = document.createElement('img');
-                img.src = url;
-                img.className = 'w-16 h-16 object-cover rounded border';
-                previewContainer.appendChild(img);
-            });
-
-            const editVehiclesContainer = document.getElementById('edit-vehicles-container');
-            editVehiclesContainer.innerHTML = '';
+            const editVehicles = document.getElementById('edit-vehicles-container');
+            editVehicles.innerHTML = '';
             const vehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
-            if (vehicles.length > 0) vehicles.forEach(v => addVehicleRow('edit-vehicles-container', 'edit', v));
+            if (vehicles.length) vehicles.forEach(v => addVehicleRow('edit-vehicles-container', 'edit', v));
             else addVehicleRow('edit-vehicles-container', 'edit');
 
             document.getElementById('edit-modal').classList.remove('hidden');
@@ -1092,7 +822,6 @@
         async function handleSaveEdit(e) {
             e.preventDefault();
             const id = document.getElementById('edit-id').value;
-
             const updatePayload = {
                 part_name: document.getElementById('edit-part-name').value.trim(),
                 brand_name: document.getElementById('edit-brand-name').value.trim(),
@@ -1109,21 +838,19 @@
                 height: parseFloat(document.getElementById('edit-height').value) || null
             };
 
-            const [newImg1, newImg2, newImg3] = await uploadImages('edit-images');
-            if (newImg1) updatePayload.image_1 = newImg1;
-            if (newImg2) updatePayload.image_2 = newImg2;
-            if (newImg3) updatePayload.image_3 = newImg3;
+            const [img1, img2, img3] = await uploadImages('edit-images');
+            if (img1) updatePayload.image_1 = img1;
+            if (img2) updatePayload.image_2 = img2;
+            if (img3) updatePayload.image_3 = img3;
 
             await _supabase.from('parts').update(updatePayload).eq('id', id);
             const vehicleIds = await getOrCreateVehicleIds('edit-vehicles-container', 'edit');
             await _supabase.from('part_vehicles').delete().eq('part_id', id);
-
-            if (vehicleIds.length > 0) {
-                const mappings = vehicleIds.map(vId => ({ part_id: id, vehicle_id: vId }));
-                await _supabase.from('part_vehicles').insert(mappings);
+            if (vehicleIds.length) {
+                await _supabase.from('part_vehicles').insert(vehicleIds.map(vId => ({ part_id: id, vehicle_id: vId })));
             }
 
-            alert('✅ 零件資料與適用車型更新成功！');
+            alert('✅ 更新成功！');
             closeEditModal();
             initHistoryDatalists();
             searchParts();
@@ -1151,17 +878,15 @@
             partPayload.image_1 = img1; partPayload.image_2 = img2; partPayload.image_3 = img3;
 
             const { data: partData, error } = await _supabase.from('parts').insert([partPayload]).select();
-            if (error) { alert('❌ 儲存失敗：' + error.message); return; }
+            if (error) { alert('❌ ' + error.message); return; }
 
             const newPartId = partData[0].id;
             const vehicleIds = await getOrCreateVehicleIds('add-vehicles-container', 'add');
-
-            if (vehicleIds.length > 0) {
-                const mappings = vehicleIds.map(vId => ({ part_id: newPartId, vehicle_id: vId }));
-                await _supabase.from('part_vehicles').insert(mappings);
+            if (vehicleIds.length) {
+                await _supabase.from('part_vehicles').insert(vehicleIds.map(vId => ({ part_id: newPartId, vehicle_id: vId })));
             }
 
-            alert('✅ 零件與關聯對照新增成功！');
+            alert('✅ 新增成功！');
             document.getElementById('add-part-form').reset();
             document.getElementById('add-preview-container').innerHTML = '';
             initHistoryDatalists();
