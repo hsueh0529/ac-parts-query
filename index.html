@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汽車與農機空調零件通用資料庫 (底盤碼精準解析 & 複製報價)</title>
+    <title>汽車與農機空調零件通用資料庫 (支援批次刪除)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-100 min-h-screen p-3 md:p-8 text-slate-800">
 
-    <!-- 全域歷史選單 DataLists (完全由歷史資料動態建立，可自由手動輸入) -->
+    <!-- 全域歷史選單 DataLists -->
     <datalist id="part-name-list"></datalist>
     <datalist id="part-brand-list"></datalist>
     <datalist id="supplier-list"></datalist>
-    <datalist id="vehicle-type-list"></datalist> <!-- 自由輸入，歷史建議 -->
+    <datalist id="vehicle-type-list"></datalist>
     <datalist id="brand-list"></datalist>
     <datalist id="model-list"></datalist>
 
@@ -39,7 +39,7 @@
         <!-- ================= 1. 查詢分頁 ================= -->
         <div id="tab-search" class="block">
             
-            <!-- ⚡ VIN 17位車身碼高精準解析專區 -->
+            <!-- VIN 17位車身碼高精準解析專區 -->
             <div class="mb-5 bg-gradient-to-r from-slate-900 to-indigo-950 p-4 rounded-xl text-white shadow-md">
                 <div class="flex items-center justify-between mb-2">
                     <label class="block text-xs font-bold uppercase tracking-wider text-indigo-200">
@@ -61,7 +61,7 @@
 
             <!-- 複合搜尋條件 -->
             <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <!-- 自訂車種類別 (可自由輸入/選擇) -->
+                <!-- 自訂車種類別 -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別 (可自由輸入)</label>
                     <input type="text" id="search-vehicle-type" list="vehicle-type-list" placeholder="手動輸入或選擇..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -82,7 +82,7 @@
                     <input type="number" id="search-year" placeholder="例: 2015" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
-                <!-- 💡 直覺免 CTRL 零件名稱點擊複選區域 -->
+                <!-- 直覺免 CTRL 零件名稱點擊複選區域 -->
                 <div class="md:col-span-2">
                     <div class="flex justify-between items-center mb-1">
                         <label class="block text-xs font-semibold text-slate-600">📦 零件名稱 (直接點擊按鈕複選)</label>
@@ -113,7 +113,7 @@
                 </button>
             </div>
 
-            <!-- 結果顯示 -->
+            <!-- 結果顯示專區 (含批次刪除列) -->
             <div id="results" class="space-y-4">
                 <p class="text-slate-400 text-sm text-center py-6">請選擇條件或輸入 VIN 碼進行查詢。</p>
             </div>
@@ -150,7 +150,6 @@
                         </div>
                     </div>
 
-                    <!-- 🔗 關聯/相容零件料號對照 (Cross Reference) -->
                     <div class="bg-indigo-50/70 p-3 rounded-lg border border-indigo-200">
                         <label class="block text-xs font-bold text-indigo-900 mb-1">
                             🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)
@@ -170,7 +169,6 @@
                         </div>
                     </div>
 
-                    <!-- 價格 -->
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
                         <label class="block text-xs font-bold text-slate-700 mb-2">💵 價格與成本紀錄 (複製報價帶入前價)</label>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -189,7 +187,6 @@
                         </div>
                     </div>
 
-                    <!-- 外觀尺寸 -->
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
                         <label class="block text-xs font-bold text-slate-700 mb-2">📐 外觀尺寸 (mm)</label>
                         <div class="grid grid-cols-3 gap-2">
@@ -199,7 +196,6 @@
                         </div>
                     </div>
 
-                    <!-- 照片上傳 -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">零件照片 (最多 3 張)</label>
                         <input type="file" id="add-images" accept="image/*" multiple onchange="previewImages(event, 'add-preview-container')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
@@ -207,7 +203,6 @@
                     </div>
                 </div>
 
-                <!-- 通用車型資訊 (車種類別自由輸入) -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <div class="flex justify-between items-center border-b pb-2">
                         <h2 class="font-bold text-sm text-slate-700">🚘 適用車型與車種類別 (可自訂任何車種類別)</h2>
@@ -339,7 +334,7 @@
         let currentResultsCache = [];
         let allVehiclesCache = [];
         
-        // 💡 紀錄直覺式零件點選選取的集合 (Set)
+        // 紀錄直覺式零件點選選取的集合
         let selectedPartNamesSet = new Set();
         let allPartNamesCache = [];
 
@@ -348,17 +343,15 @@
             addVehicleRow('add-vehicles-container', 'add');
         });
 
-        /* ================= 💡 動態讀取歷史輸入記錄 (自動建置完全自由的選單與 Chips) ================= */
+        /* ================= 動態讀取歷史輸入記錄 ================= */
         async function initHistoryDatalists() {
             try {
-                // 1. 零件歷史記錄
                 const { data: parts } = await _supabase.from('parts').select('part_name, brand_name, supplier_name');
                 if (parts) {
                     allPartNamesCache = [...new Set(parts.map(p => p.part_name ? p.part_name.trim() : '').filter(Boolean))];
                     const brands = [...new Set(parts.map(p => p.brand_name ? p.brand_name.trim() : '').filter(Boolean))];
                     const suppliers = [...new Set(parts.map(p => p.supplier_name ? p.supplier_name.trim() : '').filter(Boolean))];
 
-                    // 渲染免 CTRL 直覺式點擊按鈕區 (Chips)
                     renderPartChipsUI();
 
                     document.getElementById('part-name-list').innerHTML = allPartNamesCache.map(n => `<option value="${n}">`).join('');
@@ -366,12 +359,9 @@
                     document.getElementById('supplier-list').innerHTML = suppliers.map(s => `<option value="${s}">`).join('');
                 }
 
-                // 2. 車型與車種類別歷史記錄 (完全無預設限制，從 DB 歷史建置)
                 const { data: vehicles } = await _supabase.from('vehicles').select('vehicle_type, brand, model');
                 if (vehicles) {
                     allVehiclesCache = vehicles || [];
-                    
-                    // 完全由 DB 收集已有類別，不硬編碼任何選單
                     const customTypes = [...new Set(vehicles.map(v => v.vehicle_type ? v.vehicle_type.trim() : '').filter(Boolean))];
                     const vBrands = [...new Set(vehicles.map(v => v.brand ? v.brand.trim() : '').filter(Boolean))];
 
@@ -384,7 +374,7 @@
             }
         }
 
-        /* 💡 渲染直覺點擊複選的零件 Chips UI */
+        /* 渲染直覺點擊複選的零件 Chips UI */
         function renderPartChipsUI() {
             const container = document.getElementById('part-chips-container');
             if (!container) return;
@@ -409,7 +399,6 @@
             }).join('');
         }
 
-        /* 切換選取狀態 */
         function togglePartSelection(name) {
             if (selectedPartNamesSet.has(name)) {
                 selectedPartNamesSet.delete(name);
@@ -419,7 +408,6 @@
             renderPartChipsUI();
         }
 
-        /* 清除零件點選 */
         function clearSelectedParts() {
             selectedPartNamesSet.clear();
             renderPartChipsUI();
@@ -517,7 +505,7 @@
             searchParts();
         }
 
-        /* ================= 🗑️ 刪除零件功能 ================= */
+        /* ================= 🗑️ 單一刪除 & 批次刪除零件功能 ================= */
         async function deletePartById(id, partName) {
             if (!confirm(`⚠️ 確定要刪除零件【${partName}】嗎？\n此動作將一併清除對應的車型關聯，且無法復原！`)) {
                 return;
@@ -529,9 +517,66 @@
                 if (error) throw error;
 
                 alert('🗑️ 零件已順利刪除！');
+                initHistoryDatalists();
                 searchParts();
             } catch (err) {
                 alert('❌ 刪除失敗：' + err.message);
+            }
+        }
+
+        /* 💡 全選 / 全不選切換 */
+        function toggleSelectAllParts(masterCheckbox) {
+            const checkboxes = document.querySelectorAll('.part-select-checkbox');
+            checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+            updateBatchDeleteUI();
+        }
+
+        /* 💡 更新批次刪除按鈕狀態與計數 */
+        function updateBatchDeleteUI() {
+            const checkedBoxes = document.querySelectorAll('.part-select-checkbox:checked');
+            const allBoxes = document.querySelectorAll('.part-select-checkbox');
+            const count = checkedBoxes.length;
+
+            const btn = document.getElementById('batch-delete-btn');
+            const countSpan = document.getElementById('selected-count');
+            const masterCheckbox = document.getElementById('select-all-checkbox');
+
+            if (countSpan) countSpan.textContent = count;
+            if (btn) btn.disabled = (count === 0);
+            
+            if (masterCheckbox && allBoxes.length > 0) {
+                masterCheckbox.checked = (count === allBoxes.length);
+            }
+        }
+
+        /* 💡 執行批次刪除動作 */
+        async function batchDeleteParts() {
+            const checkedBoxes = Array.from(document.querySelectorAll('.part-select-checkbox:checked'));
+            const ids = checkedBoxes.map(cb => parseInt(cb.value)).filter(Boolean);
+
+            if (ids.length === 0) {
+                alert('⚠️ 請先勾選要刪除的零件！');
+                return;
+            }
+
+            if (!confirm(`⚠️ 確定要一次批次刪除勾選的【 ${ids.length} 項零件】嗎？\n此動作將一併清除關聯的適用車型資料，且無法復原！`)) {
+                return;
+            }
+
+            try {
+                // 1. 先刪除關聯表資料
+                const { error: pvError } = await _supabase.from('part_vehicles').delete().in('part_id', ids);
+                if (pvError) throw pvError;
+
+                // 2. 批次刪除零件主檔
+                const { error: pError } = await _supabase.from('parts').delete().in('id', ids);
+                if (pError) throw pError;
+
+                alert(`🗑️ 成功批次刪除 ${ids.length} 項零件！`);
+                initHistoryDatalists();
+                searchParts();
+            } catch (err) {
+                alert('❌ 批次刪除過程發生錯誤：' + err.message);
             }
         }
 
@@ -593,7 +638,6 @@
             currentResultsCache = [];
         }
 
-        /* 建立可自由手動輸入的車種類別輸入框 HTML */
         function createVehicleRowHTML(prefix, v = {}) {
             return `
                 <div class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
@@ -752,17 +796,14 @@
             document.getElementById('tab-add-btn').className = tab === 'add' ? 'pb-2 border-b-2 border-blue-600 font-semibold text-blue-600' : 'pb-2 font-semibold text-slate-500';
         }
 
-        /* 🔍 綜合查詢零件 (支援免 CTRL 點擊複選與自由車種比對) */
+        /* 🔍 綜合查詢零件 (支援批次刪除渲染) */
         async function searchParts() {
             const searchVType = document.getElementById('search-vehicle-type').value.trim().toLowerCase();
             const searchBrand = document.getElementById('search-brand').value.trim().toLowerCase();
             const searchModel = document.getElementById('search-model').value.trim().toLowerCase();
             const year = parseInt(document.getElementById('search-year').value);
             
-            // 讀取點選選取的零件集合
             const selectedPartNames = Array.from(selectedPartNamesSet);
-            
-            // 關鍵字搜尋 (料號/交叉號/備註)
             const keyword = document.getElementById('search-keyword').value.trim();
 
             const resultsContainer = document.getElementById('results');
@@ -773,7 +814,6 @@
                 part_vehicles ( vehicles ( vehicle_type, brand, model, start_year, start_month, end_year, end_month ) )
             `);
 
-            // 建立 OR 條件集合
             const conditions = [];
 
             if (selectedPartNames.length > 0) {
@@ -816,6 +856,7 @@
             renderResults(filteredData);
         }
 
+        /* 💡 渲染查詢結果 (含批次控制工具列與多選框) */
         function renderResults(list) {
             currentResultsCache = list;
             const resultsContainer = document.getElementById('results');
@@ -825,19 +866,39 @@
                 return;
             }
 
-            resultsContainer.innerHTML = list.map(item => {
+            // 頂部批次操作控制列
+            const batchBarHTML = `
+                <div class="flex items-center justify-between bg-slate-200/80 p-3 rounded-xl border border-slate-300 mb-3 shadow-sm">
+                    <label class="flex items-center gap-2 cursor-pointer font-bold text-xs text-slate-700 select-none">
+                        <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAllParts(this)" class="w-4 h-4 text-blue-600 rounded cursor-pointer">
+                        全選目前查詢結果 (${list.length} 筆)
+                    </label>
+                    <button id="batch-delete-btn" onclick="batchDeleteParts()" disabled 
+                            class="bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow transition flex items-center gap-1">
+                        🗑️ 批次刪除選取項目 (<span id="selected-count">0</span>)
+                    </button>
+                </div>
+            `;
+
+            const cardsHTML = list.map(item => {
                 const allVehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
 
                 return `
-                    <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition">
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition relative">
                         <div class="flex justify-between items-start gap-2 mb-2">
-                            <div>
-                                <span class="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">
-                                    ${item.brand_name || '通用品牌'}
-                                </span>
-                                <h3 class="text-base font-bold text-slate-800 mt-1">${item.part_name}</h3>
+                            <div class="flex items-start gap-2.5">
+                                <!-- 勾選方框 -->
+                                <input type="checkbox" value="${item.id}" onchange="updateBatchDeleteUI()" 
+                                       class="part-select-checkbox w-4 h-4 mt-1 text-blue-600 rounded border-slate-300 cursor-pointer">
+                                <div>
+                                    <span class="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">
+                                        ${item.brand_name || '通用品牌'}
+                                    </span>
+                                    <h3 class="text-base font-bold text-slate-800 mt-1">${item.part_name}</h3>
+                                </div>
                             </div>
+                            
                             <div class="text-right whitespace-nowrap">
                                 <span class="text-base font-extrabold text-emerald-600 block">${item.price ? 'NT$ ' + Number(item.price).toLocaleString() : '未報價'}</span>
                                 <div class="flex gap-1 justify-end mt-1">
@@ -882,6 +943,8 @@
                     </div>
                 `;
             }).join('');
+
+            resultsContainer.innerHTML = batchBarHTML + cardsHTML;
         }
 
         function openEditModalById(id) {
