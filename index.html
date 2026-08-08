@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汽車空調零件通用資料庫 (高精準 VIN 解碼 & 關聯料號)</title>
+    <title>汽車空調零件通用資料庫 (底盤碼精準解析 & 複製報價)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -12,7 +12,7 @@
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">❄️ 汽車空調零件管理系統 (含關聯料號與高精準 VIN)</span>
+            <span class="flex items-center gap-2">❄️ 汽車空調零件管理系統 (底盤碼精準版)</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
             </span>
@@ -35,13 +35,13 @@
             <div class="mb-5 bg-gradient-to-r from-slate-900 to-indigo-950 p-4 rounded-xl text-white shadow-md">
                 <div class="flex items-center justify-between mb-2">
                     <label class="block text-xs font-bold uppercase tracking-wider text-indigo-200">
-                        ⚡ 歐美亞規 VIN 車身碼精準解碼（自動提取底盤號/品牌/年份）
+                        ⚡ 歐美亞規 VIN 車身碼精準解碼（自動提取底盤號 W246/E36/W210 等）
                     </label>
-                    <span class="text-[10px] bg-indigo-800 text-indigo-200 px-2 py-0.5 rounded border border-indigo-700">混合智慧解碼器</span>
+                    <span class="text-[10px] bg-indigo-800 text-indigo-200 px-2 py-0.5 rounded border border-indigo-700">底盤碼優先解碼器</span>
                 </div>
                 
                 <div class="flex flex-col md:flex-row gap-2">
-                    <input type="text" id="search-vin" maxlength="17" placeholder="輸入 17 位 VIN 車身碼 (例如: WBA3A5C50DF... / WDD210...)" 
+                    <input type="text" id="search-vin" maxlength="17" placeholder="輸入 17 位 VIN 車身碼 (例如: WDD246... / WBA3A5... / WDD210...)" 
                            class="flex-1 border-0 rounded-lg p-2.5 text-sm text-slate-900 font-mono tracking-wider focus:ring-2 focus:ring-emerald-400 outline-none uppercase placeholder:text-slate-400">
                     <button onclick="parseAndSearchVIN()" class="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-bold px-5 py-2.5 rounded-lg transition flex items-center justify-center gap-1.5 whitespace-nowrap text-sm shadow">
                         ⚡ 解碼 VIN 並搜尋零件
@@ -60,25 +60,29 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">車型 / 底盤號</label>
-                    <input type="text" id="search-model" list="model-list" placeholder="例: E36 / W210 / CAMRY" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">底盤號 / 車型</label>
+                    <input type="text" id="search-model" list="model-list" placeholder="例: W246 / E36 / W210" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     <datalist id="model-list"></datalist>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">年份 (出廠/適用)</label>
-                    <input type="number" id="search-year" placeholder="例: 1995" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="number" id="search-year" placeholder="例: 2015" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">零件名 / 本廠料號 / 關聯替代料號</label>
-                    <input type="text" id="search-part" placeholder="例: 壓縮機 / OEM料號 / DENSO" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="search-part" placeholder="例: 風箱 壓縮機 / DENSO / 料號" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
             </div>
 
+            <!-- 操作按鈕區 -->
             <div class="flex flex-col md:flex-row gap-3 mb-6">
                 <button onclick="searchParts()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1">
                     🔍 執行綜合查詢
+                </button>
+                <button onclick="copyQuote()" class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium px-5 py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1 whitespace-nowrap">
+                    📋 複製報價文字
                 </button>
                 <button onclick="clearSearchInputs()" class="bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
                     🧹 清除條件
@@ -103,11 +107,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *</label>
-                            <input type="text" id="add-part-name" required placeholder="例如: 汽車空調壓縮機 7V16" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="add-part-name" required placeholder="例如: 風箱 / 壓縮機" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件品牌/製造商 *</label>
-                            <input type="text" id="add-brand-name" required placeholder="例如: DENSO / SANDEN / 原廠" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="add-brand-name" required placeholder="例如: 正廠 / 副廠 / Denso" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                     </div>
 
@@ -128,7 +132,7 @@
                             🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)
                         </label>
                         <p class="text-[11px] text-indigo-600 mb-2">多個料號請用「逗號」或「換行」分隔，查詢時輸入任一料號即可比對出此零件。</p>
-                        <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660, 471-1234, SD7V16-1234" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
+                        <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660, 471-1234" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -137,14 +141,14 @@
                             <input type="text" id="add-supplier-name" placeholder="例如: 台灣電綜 / 永晟" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">備註/冷媒/皮帶盤規格</label>
-                            <input type="text" id="add-remarks" placeholder="例如: 6PK 120mm, R134a, 帶線圈" class="w-full border rounded-lg p-2 text-sm">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">備註/規格說明</label>
+                            <input type="text" id="add-remarks" placeholder="例如: R134a, 帶線圈" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                     </div>
 
                     <!-- 價格 -->
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-700 mb-2">💵 價格與成本紀錄</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">💵 價格與成本紀錄 (複製報價帶入前價)</label>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">進貨成本 (NT$)</label>
@@ -165,18 +169,9 @@
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
                         <label class="block text-xs font-bold text-slate-700 mb-2">📐 外觀尺寸 (mm)</label>
                         <div class="grid grid-cols-3 gap-2">
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">長</label>
-                                <input type="number" id="add-length" step="0.1" placeholder="150" class="w-full border rounded-lg p-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">寬</label>
-                                <input type="number" id="add-width" step="0.1" placeholder="100" class="w-full border rounded-lg p-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">高</label>
-                                <input type="number" id="add-height" step="0.1" placeholder="50" class="w-full border rounded-lg p-2 text-sm">
-                            </div>
+                            <div><input type="number" id="add-length" step="0.1" placeholder="長" class="w-full border rounded-lg p-2 text-sm"></div>
+                            <div><input type="number" id="add-width" step="0.1" placeholder="寬" class="w-full border rounded-lg p-2 text-sm"></div>
+                            <div><input type="number" id="add-height" step="0.1" placeholder="高" class="w-full border rounded-lg p-2 text-sm"></div>
                         </div>
                     </div>
 
@@ -191,7 +186,7 @@
                 <!-- 通用車型資訊 -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <div class="flex justify-between items-center border-b pb-2">
-                        <h2 class="font-bold text-sm text-slate-700">🚘 適用通用車型與底盤 (可新增多台)</h2>
+                        <h2 class="font-bold text-sm text-slate-700">🚘 適用底盤與車型 (可新增多台)</h2>
                         <button type="button" onclick="addVehicleRow('add-vehicles-container', 'add')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-lg border border-blue-200 transition">
                             ➕ 新增一台車型
                         </button>
@@ -325,12 +320,11 @@
             addVehicleRow('add-vehicles-container', 'add');
         });
 
-        /* ================= ⚡ 本地歐美亞規 VIN 高精準解碼引擎 ================= */
+        /* ================= ⚡ 精準底盤號 (Chassis Code) 解碼引擎 ================= */
         function parseVINLocally(vin) {
             if (!vin || vin.length !== 17) return null;
 
             const wmi = vin.substring(0, 3);
-            const vds = vin.substring(3, 8);
             const yearChar = vin.charAt(9);
 
             // 1. 年份對照表 (第 10 位)
@@ -342,30 +336,41 @@
 
             // 2. 品牌對照表 (WMI)
             let brand = '';
-            if (wmi.startsWith('WB') || wmi.startsWith('4US')) brand = 'BMW';
-            else if (wmi.startsWith('WD') || wmi.startsWith('4JG')) brand = 'Mercedes-Benz';
+            if (wmi.startsWith('WB') || wmi.startsWith('4US') || wmi.startsWith('5UX')) brand = 'BMW';
+            else if (wmi.startsWith('WD') || wmi.startsWith('4JG') || wmi.startsWith('VNE')) brand = 'Mercedes-Benz';
             else if (wmi.startsWith('JT') || wmi.startsWith('4T') || wmi.startsWith('MR0')) brand = 'Toyota';
             else if (wmi.startsWith('WV') || wmi.startsWith('WAU')) brand = 'Volkswagen';
             else if (wmi.startsWith('JH') || wmi.startsWith('1HG')) brand = 'Honda';
-            else if (wmi.startsWith('KM') || wmi.startsWith('KNA')) brand = 'Hyundai';
 
-            // 3. 歐系底盤代碼與車型規則庫 (根據 VDS 與 WMI 關鍵特徵匹配)
+            // 3. 底盤代碼精準解析 (排除 B-Class, 3 Series 等籠統名稱)
             let model = '';
-            if (brand === 'BMW') {
-                if (vds.includes('CA') || vds.includes('CB') || vds.includes('CG') || vin.includes('E36')) model = 'E36';
-                else if (vds.includes('AL') || vds.includes('AM') || vds.includes('AV') || vin.includes('E46')) model = 'E46';
-                else if (vds.includes('VA') || vds.includes('VB') || vin.includes('E90')) model = 'E90';
-                else if (vds.includes('DD') || vds.includes('DM') || vin.includes('E39')) model = 'E39';
-                else if (vds.includes('NA') || vds.includes('NE') || vin.includes('E60')) model = 'E60';
-                else model = '3 Series';
-            } else if (brand === 'Mercedes-Benz') {
-                if (vin.includes('210') || vds.startsWith('210')) model = 'W210';
-                else if (vin.includes('211') || vds.startsWith('211')) model = 'W211';
-                else if (vin.includes('212') || vds.startsWith('212')) model = 'W212';
-                else if (vin.includes('202') || vds.startsWith('202')) model = 'W202';
-                else if (vin.includes('203') || vds.startsWith('203')) model = 'W203';
-                else if (vin.includes('204') || vds.startsWith('204')) model = 'W204';
-                else model = 'E-Class';
+            
+            if (brand === 'Mercedes-Benz') {
+                // 賓士 VIN 第 4~6 位即為底盤號 (例如 WDD246042... 中的 246)
+                const chassis3 = vin.substring(3, 6);
+                if (/^\d{3}$/.test(chassis3)) {
+                    const prefixMap = {
+                        '117': 'C117', '118': 'C118', '218': 'C218', '257': 'C257',
+                        '156': 'X156', '247': 'H247', '253': 'X253', '166': 'W166',
+                        '164': 'W164', '204': 'W204', '205': 'W205', '206': 'W206',
+                        '211': 'W211', '212': 'W212', '213': 'W213', '214': 'W214',
+                        '221': 'W221', '222': 'W222', '223': 'W223', '245': 'W245',
+                        '246': 'W246', '169': 'W169', '176': 'W176', '177': 'W177',
+                        '202': 'W202', '203': 'W203', '210': 'W210'
+                    };
+                    model = prefixMap[chassis3] || `W${chassis3}`;
+                }
+            } else if (brand === 'BMW') {
+                const vds = vin.substring(3, 8);
+                if (vin.includes('E36') || vds.includes('CA') || vds.includes('CB') || vds.includes('CG')) model = 'E36';
+                else if (vin.includes('E46') || vds.includes('AL') || vds.includes('AM') || vds.includes('AV')) model = 'E46';
+                else if (vin.includes('E90') || vds.includes('VA') || vds.includes('VB')) model = 'E90';
+                else if (vin.includes('F30') || vds.includes('3A') || vds.includes('3B')) model = 'F30';
+                else if (vin.includes('G20')) model = 'G20';
+                else if (vin.includes('E39') || vds.includes('DD') || vds.includes('DM')) model = 'E39';
+                else if (vin.includes('E60') || vds.includes('NA') || vds.includes('NE')) model = 'E60';
+                else if (vin.includes('F10')) model = 'F10';
+                else if (vin.includes('G30')) model = 'G30';
             }
 
             return { brand, model, year };
@@ -382,13 +387,12 @@
 
             vinStatus.classList.remove('hidden');
             vinStatus.className = 'block text-xs text-blue-200 bg-blue-950/80 p-3 rounded-lg border border-blue-700/80 mt-3 font-medium animate-pulse';
-            vinStatus.innerHTML = '⏳ 正在分析 VIN 車身號碼結構與國際車輛資料庫...';
+            vinStatus.innerHTML = '⏳ 正在分析 VIN 車身結構與識別底盤碼...';
 
-            // 先使用本地高精準規則庫解析
             let decoded = parseVINLocally(vinInput);
             
-            // 若本地無法完全抓出 model，備用連線 NHTSA
-            if (!decoded || !decoded.model || decoded.model.includes('Series')) {
+            // 備用 API 連線 (會屏障 Series / Class 等籠統名稱)
+            if (!decoded || !decoded.model) {
                 try {
                     const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${vinInput}?format=json`);
                     if (res.ok) {
@@ -397,13 +401,15 @@
                             const apiRes = data.Results[0];
                             if (!decoded.brand) decoded.brand = apiRes.Make || '';
                             if (!decoded.year) decoded.year = apiRes.ModelYear || '';
-                            if (!decoded.model || decoded.model.includes('Series')) {
-                                decoded.model = apiRes.Model || apiRes.Series || decoded.model;
+                            const rawModel = apiRes.Model || apiRes.Series || '';
+                            // 屏障籠統車系字眼
+                            if (rawModel && !/series|class|級/i.test(rawModel)) {
+                                decoded.model = rawModel;
                             }
                         }
                     }
                 } catch (e) {
-                    console.warn('API 備用連線失敗，採用本地解析結果');
+                    console.warn('API 備用連線失敗');
                 }
             }
 
@@ -414,9 +420,52 @@
 
             vinStatus.classList.remove('animate-pulse');
             vinStatus.className = 'block text-xs text-emerald-200 bg-emerald-950/80 p-3 rounded-lg border border-emerald-700/80 mt-3 font-medium';
-            vinStatus.innerHTML = `✅ <b>VIN 精準解碼成功：</b> ${decoded.year || ''} ${decoded.brand || ''} ${decoded.model || ''} (已自動帶入下欄並執行比對)`;
+            vinStatus.innerHTML = `✅ <b>VIN 精準底盤解碼：</b> ${decoded.year || ''} ${decoded.brand || ''} <b>${decoded.model || '全底盤'}</b> (已自動帶入下欄並查詢)`;
 
             searchParts();
+        }
+
+        /* ================= 📋 複製報價文字功能 ================= */
+        async function copyQuote() {
+            if (!currentResultsCache || currentResultsCache.length === 0) {
+                alert('⚠️ 目前沒有可複製的查詢結果！請先執行查詢。');
+                return;
+            }
+
+            // 依據零件名稱 (part_name) 進行分組
+            const grouped = {};
+            currentResultsCache.forEach(item => {
+                const pName = item.part_name ? item.part_name.trim() : '未命名零件';
+                if (!grouped[pName]) grouped[pName] = [];
+                grouped[pName].push(item);
+            });
+
+            let textLines = [];
+            for (const [partName, items] of Object.entries(grouped)) {
+                textLines.push(`【${partName}】`);
+                items.forEach(item => {
+                    const brand = item.brand_name || '未指定品牌';
+                    const priceVal = (item.price !== null && item.price !== undefined && item.price !== '') ? item.price : '';
+                    textLines.push(`${brand} $${priceVal}`);
+                });
+                textLines.push(''); // 空行分隔
+            }
+
+            const copyText = textLines.join('\n').trim();
+
+            try {
+                await navigator.clipboard.writeText(copyText);
+                alert('📋 報價文字已成功複製至剪貼簿！\n\n' + copyText);
+            } catch (err) {
+                // 相容舊型瀏覽器剪貼簿複製
+                const textarea = document.createElement('textarea');
+                textarea.value = copyText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('📋 報價文字已成功複製至剪貼簿！\n\n' + copyText);
+            }
         }
 
         function clearSearchInputs() {
@@ -441,18 +490,18 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pr-14">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 *</label>
-                            <input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm" required placeholder="例: BMW" value="${v.brand || ''}">
+                            <input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm" required placeholder="例: Mercedes-Benz" value="${v.brand || ''}">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">底盤/車型 *</label>
-                            <input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm" required placeholder="例: E36" value="${v.model || ''}">
+                            <input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm" required placeholder="例: W246 / E36" value="${v.model || ''}">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label>
-                            <input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm" required placeholder="例: 1992" value="${v.start_year || ''}">
+                            <input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm" required placeholder="例: 2011" value="${v.start_year || ''}">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label>
@@ -460,7 +509,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label>
-                            <input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm" required placeholder="例: 1998" value="${v.end_year || ''}">
+                            <input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm" required placeholder="例: 2018" value="${v.end_year || ''}">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label>
@@ -533,7 +582,7 @@
             container.innerHTML = '';
             const files = Array.from(event.target.files).slice(0, 3);
 
-            files.forEach((file, index) => {
+            files.forEach((file) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const wrapper = document.createElement('div');
@@ -592,7 +641,7 @@
             document.getElementById('tab-add-btn').className = tab === 'add' ? 'pb-2 border-b-2 border-blue-600 font-semibold text-blue-600' : 'pb-2 font-semibold text-slate-500';
         }
 
-        /* 🔍 執行綜合查詢（包含本廠料號、OEM 料號與 Cross Ref 交叉比對） */
+        /* 🔍 綜合查詢零件 */
         async function searchParts() {
             const searchBrand = document.getElementById('search-brand').value.trim().toLowerCase();
             const searchModel = document.getElementById('search-model').value.trim().toLowerCase();
@@ -600,7 +649,7 @@
             const rawPartInput = document.getElementById('search-part').value.trim();
             const resultsContainer = document.getElementById('results');
 
-            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在比對零件與關聯料號庫存...</p>';
+            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在比對零件與關聯料號...</p>';
 
             const keywords = rawPartInput.split(/[,，\s\n、]+/).map(k => k.trim()).filter(k => k.length > 0);
 
@@ -647,7 +696,7 @@
             const resultsContainer = document.getElementById('results');
 
             if (list.length === 0) {
-                resultsContainer.innerHTML = `<p class="text-amber-600 text-sm text-center py-6 bg-amber-50 rounded-xl border border-amber-200">查無符合條件的零件或關聯料號。</p>`;
+                resultsContainer.innerHTML = `<p class="text-amber-600 text-sm text-center py-6 bg-amber-50 rounded-xl border border-amber-200">查無符合條件的零件。</p>`;
                 return;
             }
 
@@ -665,11 +714,11 @@
                             </div>
                             <div class="text-right whitespace-nowrap">
                                 <span class="text-base font-extrabold text-emerald-600 block">${item.price ? 'NT$ ' + Number(item.price).toLocaleString() : '未報價'}</span>
-                                <button onclick="openEditModalById(${item.id})" class="text-xs bg-slate-100 hover:bg-blue-50 text-blue-600 px-2 py-1 rounded border mt-1">✏️ 編輯零件與關聯</button>
+                                <button onclick="openEditModalById(${item.id})" class="text-xs bg-slate-100 hover:bg-blue-50 text-blue-600 px-2 py-1 rounded border mt-1">✏️ 編輯零件</button>
                             </div>
                         </div>
 
-                        <!-- 關鍵料號區塊 -->
+                        <!-- 關鍵料號 -->
                         <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs space-y-1 my-2">
                             <div class="flex flex-wrap gap-3">
                                 <span>本廠料號：<strong class="font-mono text-blue-900 bg-white px-1.5 py-0.5 rounded border">${item.part_number}</strong></span>
@@ -678,7 +727,7 @@
                             
                             ${item.cross_reference ? `
                                 <div class="mt-1 pt-1 border-t border-slate-200/60">
-                                    <span class="text-indigo-800 font-bold">🔗 交叉對照/替代料號 (Cross Ref)：</span>
+                                    <span class="text-indigo-800 font-bold">🔗 交叉對照料號：</span>
                                     <span class="font-mono text-indigo-900 bg-indigo-50/80 px-1.5 py-0.5 rounded border border-indigo-200">${item.cross_reference}</span>
                                 </div>
                             ` : ''}
@@ -689,7 +738,7 @@
                         </div>
 
                         <div class="border-t pt-2">
-                            <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容車型 (${allVehicles.length} 台)：</span>
+                            <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容底盤與車型 (${allVehicles.length} 台)：</span>
                             <div class="flex flex-wrap gap-1">
                                 ${allVehicles.map(v => `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded border">${v.brand} ${v.model} (${v.start_year}-${v.end_year})</span>`).join('')}
                             </div>
@@ -755,7 +804,7 @@
                 await _supabase.from('part_vehicles').insert(mappings);
             }
 
-            alert('✅ 零件與交叉關聯號碼更新成功！');
+            alert('✅ 零件資料與適用車型更新成功！');
             closeEditModal();
             searchParts();
         }
@@ -779,7 +828,7 @@
             partPayload.image_1 = img1; partPayload.image_2 = img2; partPayload.image_3 = img3;
 
             const { data: partData, error } = await _supabase.from('parts').insert([partPayload]).select();
-            if (error) { alert('❌ 儲存失敗，請檢查格式：' + error.message); return; }
+            if (error) { alert('❌ 儲存失敗：' + error.message); return; }
 
             const newPartId = partData[0].id;
             const vehicleIds = await getOrCreateVehicleIds('add-vehicles-container', 'add');
@@ -789,7 +838,7 @@
                 await _supabase.from('part_vehicles').insert(mappings);
             }
 
-            alert('✅ 零件與關聯對照表新增成功！');
+            alert('✅ 零件與關聯對照新增成功！');
             document.getElementById('add-part-form').reset();
             switchTab('search');
             searchParts();
