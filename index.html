@@ -815,6 +815,10 @@
                                         <span class="text-indigo-800 font-bold">🔗 交叉對照料號：</span>
                                         <span onclick="jumpToKeywordSearch('${item.cross_reference.trim() || ''}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}</span>
                                     </div>` : ''}
+                                ${item.remarks ? `
+                                    <div class="mt-1.5 pt-1.5 border-t text-slate-700">
+                                        <span class="font-bold text-slate-800">📝 備註說明：</span>${item.remarks}
+                                    </div>` : ''}
                             </div>
 
                             <div class="bg-amber-50/70 p-2.5 rounded-lg border border-amber-200">
