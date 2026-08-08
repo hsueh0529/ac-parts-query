@@ -13,32 +13,47 @@
 
     <!-- 頂部導覽列 -->
     <header class="bg-indigo-900 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
             <h1 class="text-xl font-bold flex items-center gap-2">
                 ❄️ 凱堤耐特 汽車冷氣零件管理系統
             </h1>
-            <button onclick="openAddModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow">
-                ＋ 新增零件資料
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="openAddModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow">
+                    ＋ 新增零件資料
+                </button>
+            </div>
         </div>
     </header>
 
     <!-- 主內容區塊 -->
     <main class="max-w-7xl mx-auto px-4 py-6">
 
-        <!-- 搜尋與篩選條件區 -->
+        <!-- 🔍 綜合查詢區 (含 VIN 碼與車型條件) -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-6">
             <h2 class="text-base font-bold text-slate-700 mb-3 flex items-center gap-1">
                 🔍 零件與車型交叉查詢
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                <input type="text" id="search-keyword" placeholder="關鍵字 / 料號 (如: DCP05001)..." class="p-2 border rounded-md text-sm border-slate-300 focus:outline-indigo-500">
-                <input type="text" id="search-brand" placeholder="品牌 (如: BMW)..." class="p-2 border rounded-md text-sm border-slate-300 focus:outline-indigo-500">
-                <input type="text" id="search-model" placeholder="車型 (如: E36)..." class="p-2 border rounded-md text-sm border-slate-300 focus:outline-indigo-500">
-                <input type="text" id="search-year" placeholder="年份..." class="p-2 border rounded-md text-sm border-slate-300 focus:outline-indigo-500">
+            
+            <!-- VIN 碼快速解碼區 -->
+            <div class="mb-4 p-3 bg-indigo-50/60 rounded-lg border border-indigo-100 flex flex-wrap items-center gap-3">
+                <span class="text-xs font-bold text-indigo-900 flex items-center gap-1">
+                    🚗 VIN 車身號碼查詢：
+                </span>
+                <input type="text" id="search-vin" placeholder="請輸入 17 碼 VIN 碼 (例如: WBA...)" class="flex-1 min-w-[240px] p-2 border rounded-md text-sm font-mono border-indigo-200 focus:outline-indigo-500 uppercase">
+                <button onclick="parseAndSearchVIN()" class="bg-indigo-800 hover:bg-indigo-900 text-white px-4 py-2 rounded-md text-sm font-medium transition shadow-sm">
+                    解析 VIN 碼並查詢
+                </button>
+            </div>
+
+            <!-- 一般條件搜尋區 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                <input type="text" id="search-keyword" placeholder="關鍵字/料號 (如: DCP05001)..." class="p-2 border rounded-md text-sm border-slate-300 focus:outline-indigo-500">
+                <input type="text" id="search-brand" placeholder="品牌 (如: BMW, Toyota)..." class="p-2 border rounded-md text-sm border-slate-300 focus:outline-indigo-500">
+                <input type="text" id="search-model" placeholder="車型 (如: E36, Altis)..." class="p-2 border rounded-md text-sm border-slate-300 focus:outline-indigo-500">
+                <input type="text" id="search-year" placeholder="年份 (如: 1995)..." class="p-2 border rounded-md text-sm border-slate-300 focus:outline-indigo-500">
                 <input type="hidden" id="search-vehicle-type" value="">
                 
-                <div class="flex gap-2">
+                <div class="flex gap-2 sm:col-span-2 md:col-span-1">
                     <button onclick="searchParts()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-md text-sm transition">
                         查詢
                     </button>
@@ -81,8 +96,8 @@
                     <label class="block text-xs font-bold text-slate-600 mb-1">
                         🔗 搭配 / 關聯料號 (多筆請用逗號或換行分隔)
                     </label>
-                    <textarea id="form-cross-reference" rows="2" placeholder="如: EXP-9921, DCN09002 (系統將自動寫入雙向連結)" class="w-full p-2 border rounded-md text-sm font-mono border-slate-300 focus:outline-indigo-500"></textarea>
-                    <p class="text-[11px] text-indigo-600 mt-1">※ 輸入後，系統會在儲存時自動給對應零件帶入本料號。</p>
+                    <textarea id="form-cross-reference" rows="2" placeholder="如: EXP-9921, DCN09002 (系統儲存時將自動雙向同步)" class="w-full p-2 border rounded-md text-sm font-mono border-slate-300 focus:outline-indigo-500"></textarea>
+                    <p class="text-[11px] text-indigo-600 mt-1">※ 儲存後，系統會在背景為這些關聯零件自動寫入本料號。</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -106,28 +121,54 @@
 
     <!-- 邏輯腳本區塊 -->
     <script>
-        /* ================= ⚙️ Supabase 初始化設定 ================= */
+        /* ================= ⚙️ 1. 最頂層初始化 Supabase (避免 TDZ 報錯) ================= */
         const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // 請替換為您的 Supabase 網址
         const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // 請替換為您的 Supabase Anon Key
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let _supabase = null;
+        if (typeof supabase !== 'undefined') {
+            _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
 
-        // 頁面載入後自動查詢
+        // 頁面載入完成後發動自動查詢
         document.addEventListener('DOMContentLoaded', () => {
-            searchParts();
+            if (_supabase) {
+                searchParts();
+            } else {
+                console.error("Supabase SDK 載入失敗，請確認網路連線。");
+            }
         });
 
-        /* ================= 🔄 雙向自動連動更新核心邏輯 ================= */
-        async function syncCrossReferences(currentPartNumber, crossRefText) {
-            if (!currentPartNumber || !crossRefText) return;
+        /* ================= 🚗 2. VIN 碼解碼與查詢邏輯 ================= */
+        async function parseAndSearchVIN() {
+            const vinInput = document.getElementById('search-vin').value.trim().toUpperCase();
+            if (!vinInput || vinInput.length < 11) {
+                alert('請輸入有效的 17 位數 VIN 車身號碼！');
+                return;
+            }
 
-            // 解析目前輸入的所有關聯料號（支援逗號或換行分隔）
+            // 此處可擴充線上 VIN API 或本地邏輯解碼車型
+            // 範例邏輯：提取製造商與年份代碼
+            const wmi = vinInput.substring(0, 3);
+            const yearCode = vinInput.charAt(9);
+
+            // 清空其他欄位並將 VIN 填入關鍵字或自動比對
+            document.getElementById('search-keyword').value = vinInput;
+            
+            // 執行零件庫對照查詢
+            await searchParts();
+        }
+
+        /* ================= 🔄 3. 雙向自動連動更新邏輯 ================= */
+        async function syncCrossReferences(currentPartNumber, crossRefText) {
+            if (!_supabase || !currentPartNumber || !crossRefText) return;
+
             const targetPartNumbers = crossRefText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
 
             for (const targetNo of targetPartNumbers) {
                 if (targetNo.toLowerCase() === currentPartNumber.toLowerCase()) continue;
 
                 try {
-                    // 搜尋資料庫中是否存在該目標料號的零件
                     const { data: targetParts } = await _supabase
                         .from('parts')
                         .select('id, cross_reference')
@@ -139,7 +180,6 @@
                                 ? targetPart.cross_reference.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
                                 : [];
 
-                            // 若目標零件的關聯清單中尚未包含目前零件，則自動補上 (實現雙向連動)
                             const isAlreadyLinked = existingRefs.some(ref => ref.toLowerCase() === currentPartNumber.toLowerCase());
                             
                             if (!isAlreadyLinked) {
@@ -159,25 +199,32 @@
             }
         }
 
-        /* ================= ⚡ 一鍵跳轉至對應零件卡片 ================= */
+        /* ================= ⚡ 4. 一鍵跳轉至對應零件卡片 ================= */
         function quickSearchByNumber(partNo) {
             if (!partNo) return;
             
-            // 清除其他篩選欄位，專注於精準比對該料號
+            // 清除車型與 VIN 篩選條件
+            document.getElementById('search-vin').value = '';
             document.getElementById('search-brand').value = '';
             document.getElementById('search-model').value = '';
             document.getElementById('search-year').value = '';
             
-            // 自動帶入關鍵字並發動查詢
+            // 帶入料號關鍵字並查詢
             document.getElementById('search-keyword').value = partNo.trim();
             searchParts();
         }
 
-        /* ================= 🔎 搜尋零件資料 ================= */
+        /* ================= 🔎 5. 綜合零件查詢 (含 VIN / 車型 / 關鍵字) ================= */
         async function searchParts() {
+            if (!_supabase) return;
+
             const keyword = document.getElementById('search-keyword').value.trim();
+            const brand = document.getElementById('search-brand').value.trim();
+            const model = document.getElementById('search-model').value.trim();
+            const year = document.getElementById('search-year').value.trim();
+            
             const container = document.getElementById('results-container');
-            container.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400">載入中...</div>`;
+            container.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400">資料查詢中...</div>`;
 
             try {
                 let query = _supabase.from('parts').select('*');
@@ -196,7 +243,7 @@
             }
         }
 
-        /* ================= 🎨 渲染查詢結果卡片 ================= */
+        /* ================= 🎨 6. 渲染查詢結果卡片 ================= */
         function renderResults(items) {
             const container = document.getElementById('results-container');
             
@@ -250,9 +297,11 @@
             `).join('');
         }
 
-        /* ================= 💾 表單提交 (新增 / 編輯) ================= */
+        /* ================= 💾 7. 表單提交 (新增 / 編輯) ================= */
         async function handleFormSubmit(e) {
             e.preventDefault();
+            if (!_supabase) return;
+
             const id = document.getElementById('edit-id').value;
             const partNumber = document.getElementById('form-part-number').value.trim();
             const name = document.getElementById('form-part-name').value.trim();
@@ -270,14 +319,12 @@
 
             try {
                 if (id) {
-                    // 編輯邏輯
                     await _supabase.from('parts').update(payload).eq('id', id);
                 } else {
-                    // 新增邏輯
                     await _supabase.from('parts').insert([payload]);
                 }
 
-                // 發動雙向同步關聯寫入
+                // 自動發動雙向關聯同步
                 if (partNumber && crossReference) {
                     await syncCrossReferences(partNumber, crossReference);
                 }
@@ -290,7 +337,7 @@
             }
         }
 
-        /* ================= 🪟 Modal 彈窗控制 ================= */
+        /* ================= 🪟 8. Modal 彈窗控制 ================= */
         function openAddModal() {
             document.getElementById('edit-id').value = '';
             document.getElementById('modal-title').innerText = '新增零件資料';
@@ -317,6 +364,7 @@
         }
 
         function clearSearch() {
+            document.getElementById('search-vin').value = '';
             document.getElementById('search-keyword').value = '';
             document.getElementById('search-brand').value = '';
             document.getElementById('search-model').value = '';
