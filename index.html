@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汽車與農機空調零件通用資料庫 (支援雙向連動與一鍵跳轉)</title>
+    <title>汽車與農機空調零件通用資料庫 (支援配套組合與雙向連動)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -20,7 +20,7 @@
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">❄️ 汽車/農機/重機空調零件管理系統 (雙向連動版)</span>
+            <span class="flex items-center gap-2">❄️ 汽車/農機空調零件與配套組合管理系統</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
             </span>
@@ -29,17 +29,17 @@
         <!-- 功能頁籤切換按鈕 -->
         <div class="flex gap-4 border-b mb-6">
             <button id="tab-search-btn" onclick="switchTab('search')" class="pb-2 border-b-2 border-blue-600 font-semibold text-blue-600 transition">
-                🔍 零件、關聯料號與 VIN 查詢
+                🔍 零件、配套組合與 VIN 查詢
             </button>
             <button id="tab-add-btn" onclick="switchTab('add')" class="pb-2 font-semibold text-slate-500 hover:text-slate-800 transition">
-                ➕ 建立新零件與關聯對照
+                ➕ 建立新零件與配套關聯
             </button>
         </div>
 
         <!-- ================= 1. 查詢分頁 ================= -->
         <div id="tab-search" class="block">
             
-            <!-- VIN 17位車身碼高精準解析專區 (整合 Vincario API) -->
+            <!-- VIN 17位車身碼高精準解析專區 -->
             <div class="mb-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-4 rounded-xl text-white shadow-md">
                 <div class="flex items-center justify-between mb-2">
                     <label class="block text-xs font-bold uppercase tracking-wider text-indigo-200 flex items-center gap-1.5">
@@ -64,7 +64,7 @@
             <!-- 複合搜尋條件 (雙向連動綁定) -->
             <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別 (雙向連動)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別</label>
                     <input type="text" id="search-vehicle-type" list="vehicle-type-list" placeholder="手動輸入或選擇..." oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
@@ -75,7 +75,7 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">底盤號 / 車型</label>
-                    <input type="text" id="search-model" list="model-list" placeholder="例: W246 / E36 / 6120" oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="search-model" list="model-list" placeholder="例: W246 / E36" oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <div>
@@ -86,7 +86,7 @@
                 <!-- 零件名稱點擊複選區域 (雙向連動 Chips) -->
                 <div class="md:col-span-2">
                     <div class="flex justify-between items-center mb-1">
-                        <label class="block text-xs font-semibold text-slate-600">📦 零件名稱 (雙向點擊複選)</label>
+                        <label class="block text-xs font-semibold text-slate-600">📦 零件名稱 (點擊複選篩選)</label>
                         <button type="button" onclick="clearSelectedParts()" class="text-[11px] text-blue-600 hover:underline">清除選取</button>
                     </div>
                     <div id="part-chips-container" class="flex flex-wrap gap-1.5 p-2 bg-white border border-slate-200 rounded-lg min-h-[4.5rem] max-h-24 overflow-y-auto">
@@ -96,8 +96,8 @@
 
                 <!-- 料號與關聯對照關鍵字 -->
                 <div class="md:col-span-6 border-t pt-2 mt-1">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">🔍 本廠 / OEM / 交叉料號 / 備註關鍵字搜尋</label>
-                    <input type="text" id="search-keyword" placeholder="輸入料號例: DCP05001 / 6452... (按 Enter 可直接查詢)" onkeydown="if(event.key==='Enter') searchParts()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">🔍 本廠 / OEM / 交叉料號 / 配套零件關鍵字搜尋</label>
+                    <input type="text" id="search-keyword" placeholder="輸入料號例: DCP05001 / 膨脹閥 / O環 (按 Enter 可直接查詢)" onkeydown="if(event.key==='Enter') searchParts()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
             </div>
 
@@ -107,7 +107,7 @@
                     🔍 執行綜合查詢
                 </button>
                 <button onclick="copyQuote()" class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium px-5 py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1 whitespace-nowrap">
-                    📋 複製報價文字
+                    📋 複製報價與配套清單
                 </button>
                 <button onclick="clearSearchInputs()" class="bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
                     🧹 清除條件
@@ -120,7 +120,7 @@
             </div>
         </div>
 
-        <!-- ================= 2. 新增零件與關聯料號分頁 ================= -->
+        <!-- ================= 2. 新增零件與配套組合分頁 ================= -->
         <div id="tab-add" class="hidden">
             <form id="add-part-form" onsubmit="handleAddPart(event)" class="space-y-4 max-w-3xl mx-auto">
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
@@ -135,7 +135,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件品牌/製造商 *</label>
-                            <input type="text" id="add-brand-name" list="part-brand-list" required placeholder="可自由輸入 (例: 正廠 / 副廠 / Denso)" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="add-brand-name" list="part-brand-list" required placeholder="可自由輸入 (例: 正廠 / Denso)" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                     </div>
 
@@ -154,8 +154,16 @@
                         <label class="block text-xs font-bold text-indigo-900 mb-1">
                             🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)
                         </label>
-                        <p class="text-[11px] text-indigo-600 mb-2">多個料號請用「逗號」或「換行」分隔，查詢時輸入任一料號即可比對出此零件。</p>
-                        <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660, 471-1234" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
+                        <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
+                    </div>
+
+                    <!-- 🚀 新增：配套組合 / 建議搭配零件區塊 -->
+                    <div class="bg-amber-50/80 p-3 rounded-lg border border-amber-200">
+                        <label class="block text-xs font-bold text-amber-900 mb-1">
+                            🔧 建議搭配配套零組件 (Kit / Companion Parts)
+                            <span class="font-normal text-[11px] text-amber-700 block">例如風箱需對應：[膨脹閥: V-101]、[O環組: OR-002]、[固定螺絲: SCR-8]，方便完工打包或報價時一併帶出。</span>
+                        </label>
+                        <textarea id="add-kit-parts" rows="2" placeholder="格式範例: 膨脹閥 (料號: V-01), O環 (料號: OR-99), 固定螺絲 (料號: S-02)" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -170,7 +178,7 @@
                     </div>
 
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-700 mb-2">💵 價格與成本紀錄 (複製報價帶入前價)</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">💵 價格與成本紀錄</label>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">進貨成本 (NT$)</label>
@@ -187,15 +195,6 @@
                         </div>
                     </div>
 
-                    <div class="bg-white p-3 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-700 mb-2">📐 外觀尺寸 (mm)</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <div><input type="number" id="add-length" step="0.1" placeholder="長" class="w-full border rounded-lg p-2 text-sm"></div>
-                            <div><input type="number" id="add-width" step="0.1" placeholder="寬" class="w-full border rounded-lg p-2 text-sm"></div>
-                            <div><input type="number" id="add-height" step="0.1" placeholder="高" class="w-full border rounded-lg p-2 text-sm"></div>
-                        </div>
-                    </div>
-
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">零件照片 (最多 3 張)</label>
                         <input type="file" id="add-images" accept="image/*" multiple onchange="previewImages(event, 'add-preview-container')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
@@ -205,7 +204,7 @@
 
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <div class="flex justify-between items-center border-b pb-2">
-                        <h2 class="font-bold text-sm text-slate-700">🚘 適用車型與車種類別 (可自訂任何車種類別)</h2>
+                        <h2 class="font-bold text-sm text-slate-700">🚘 適用車型與車種類別</h2>
                         <button type="button" onclick="addVehicleRow('add-vehicles-container', 'add')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-lg border border-blue-200 transition">
                             ➕ 新增一台車型
                         </button>
@@ -214,7 +213,7 @@
                 </div>
 
                 <button type="submit" id="submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition">
-                    💾 儲存零件與關聯對照
+                    💾 儲存零件與配套組合
                 </button>
             </form>
         </div>
@@ -225,7 +224,7 @@
     <div id="edit-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="text-base font-bold text-slate-800">✏️ 編輯零件與關聯料號對照</h3>
+                <h3 class="text-base font-bold text-slate-800">✏️ 編輯零件與配套組合</h3>
                 <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold px-2">&times;</button>
             </div>
             
@@ -255,8 +254,14 @@
                     </div>
 
                     <div class="bg-indigo-50/70 p-2.5 rounded-lg border border-indigo-200">
-                        <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 關聯/替代/交叉料號 (Cross Reference)</label>
+                        <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 交叉料號 (Cross Reference)</label>
                         <textarea id="edit-cross-ref" rows="2" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
+                    </div>
+
+                    <!-- 編輯配套組合 -->
+                    <div class="bg-amber-50/80 p-2.5 rounded-lg border border-amber-200">
+                        <label class="block text-xs font-bold text-amber-900 mb-1">🔧 建議搭配配套零組件 (Kit / Companion Parts)</label>
+                        <textarea id="edit-kit-parts" rows="2" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
@@ -287,21 +292,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">📐 外觀尺寸 (mm)</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <div><input type="number" id="edit-length" step="0.1" placeholder="長" class="w-full border rounded-lg p-1.5 text-sm"></div>
-                            <div><input type="number" id="edit-width" step="0.1" placeholder="寬" class="w-full border rounded-lg p-1.5 text-sm"></div>
-                            <div><input type="number" id="edit-height" step="0.1" placeholder="高" class="w-full border rounded-lg p-1.5 text-sm"></div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">照片更新</label>
-                        <input type="file" id="edit-images" accept="image/*" multiple onchange="previewImages(event, 'edit-preview-container')" class="w-full text-xs text-slate-500 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700">
-                        <div id="edit-preview-container" class="flex gap-2 mt-2 overflow-x-auto"></div>
-                    </div>
                 </div>
 
                 <div class="space-y-3 border-t pt-3">
@@ -324,7 +314,6 @@
 
     <!-- JS 邏輯區 -->
     <script>
-        /* ================= ⚙️ 組態設定 ================= */
         const SUPABASE_URL = 'https://zudcigogppwberpsdoiw.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_CFja31od0wDX-PEUBOGhcg_BEX8cTbo';
         const STORAGE_BUCKET = 'part-images';
@@ -338,7 +327,7 @@
         let allVehiclesCache = [];
         let selectedPartNamesSet = new Set();
         let allPartNamesCache = [];
-        let isSyncing = false; // 用於雙向連動控制，防止無限迴圈
+        let isSyncing = false;
 
         document.addEventListener('DOMContentLoaded', () => {
             initHistoryDatalists();
@@ -377,18 +366,16 @@
                 const data = await response.json();
 
                 if (data && data.decode) {
-                    let brand = '', model = '', chassis = '', year = '', engine = '', displacement = '';
+                    let brand = '', model = '', chassis = '', year = '';
                     data.decode.forEach(item => {
                         const key = (item.label || item.id || '').toLowerCase();
                         const val = item.value || '';
                         if (key.includes('make') || key.includes('manufacturer')) brand = val;
                         else if (key.includes('model year') || key === 'year') year = val;
-                        else if (key.includes('chassis') || key.includes('platform') || key.includes('generation')) chassis = val;
+                        else if (key.includes('chassis') || key.includes('platform')) chassis = val;
                         else if (key.includes('model') && !model) model = val;
-                        else if (key.includes('engine code')) engine = val;
-                        else if (key.includes('displacement')) displacement = val;
                     });
-                    return { source: 'Vincario API', brand, model: chassis || model, year, engine, displacement };
+                    return { source: 'Vincario API', brand, model: chassis || model, year };
                 }
             } catch (err) { console.warn(err); }
             return null;
@@ -421,7 +408,7 @@
             if (decoded.model) document.getElementById('search-model').value = decoded.model;
             if (decoded.year) document.getElementById('search-year').value = decoded.year;
 
-            vinStatus.innerHTML = `✅ <b>[${decoded.source}] 解碼成功：</b> ${decoded.year || ''} ${decoded.brand || ''} <b>${decoded.model || ''}</b> (已自動連動搜尋)`;
+            vinStatus.innerHTML = `✅ <b>[${decoded.source}] 解碼成功：</b> ${decoded.year || ''} ${decoded.brand || ''} <b>${decoded.model || ''}</b>`;
             searchParts();
         }
 
@@ -452,11 +439,9 @@
             } catch (e) { console.warn(e); }
         }
 
-        /* ================= ⚡ 雙向連動機制 (Two-Way Sync) ================= */
         function triggerTwoWaySync() {
             if (isSyncing) return;
             isSyncing = true;
-            // 雙向連動：當輸入條件改變時，可選零件 Chips 狀態也同步即時反應或自動過濾
             renderPartChipsUI();
             isSyncing = false;
         }
@@ -489,7 +474,7 @@
             if (selectedPartNamesSet.has(name)) selectedPartNamesSet.delete(name);
             else selectedPartNamesSet.add(name);
             renderPartChipsUI();
-            searchParts(); // 點擊晶片時雙向觸發即時搜尋
+            searchParts();
         }
 
         function clearSelectedParts() {
@@ -498,30 +483,21 @@
             searchParts();
         }
 
-        /* ================= ⚡ 一鍵跳轉定位 (Quick Jump) ================= */
         function jumpToVehicleFilter(brand, model, vehicleType) {
-            // 一鍵跳轉：點擊查詢結果中的車型或對照料號，自動填入對應欄位並執行查詢
             if (brand) document.getElementById('search-brand').value = brand;
             if (model) document.getElementById('search-model').value = model;
             if (vehicleType) document.getElementById('search-vehicle-type').value = vehicleType;
-            
             handleBrandChange();
-            
-            // 頁面捲動至頂部搜尋區
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            // 執行即時查詢
             searchParts();
         }
 
         function jumpToKeywordSearch(keyword) {
-            // 一鍵跳轉：點擊交叉料號時自動帶入關鍵字並搜尋
             document.getElementById('search-keyword').value = keyword;
             window.scrollTo({ top: 0, behavior: 'smooth' });
             searchParts();
         }
 
-        /* ================= 🗑️ 刪除與其他操作 ================= */
         async function deletePartById(id, partName) {
             if (!confirm(`⚠️ 確定要刪除零件【${partName}】嗎？`)) return;
             try {
@@ -533,39 +509,18 @@
             } catch (err) { alert('❌ 刪除失敗：' + err.message); }
         }
 
-        function toggleSelectAllParts(masterCheckbox) {
-            document.querySelectorAll('.part-select-checkbox').forEach(cb => cb.checked = masterCheckbox.checked);
-            updateBatchDeleteUI();
-        }
-
-        function updateBatchDeleteUI() {
-            const count = document.querySelectorAll('.part-select-checkbox:checked').length;
-            document.getElementById('selected-count').textContent = count;
-            document.getElementById('batch-delete-btn').disabled = (count === 0);
-        }
-
-        async function batchDeleteParts() {
-            const ids = Array.from(document.querySelectorAll('.part-select-checkbox:checked')).map(cb => parseInt(cb.value));
-            if (ids.length === 0 || !confirm(`⚠️ 確定批次刪除勾選的 ${ids.length} 項零件嗎？`)) return;
-            try {
-                await _supabase.from('part_vehicles').delete().in('part_id', ids);
-                await _supabase.from('parts').delete().in('id', ids);
-                alert('🗑️ 批次刪除成功！');
-                initHistoryDatalists();
-                searchParts();
-            } catch (err) { alert('❌ 錯誤：' + err.message); }
-        }
-
         async function copyQuote() {
             if (!currentResultsCache || currentResultsCache.length === 0) { alert('⚠️ 無查詢結果可複製！'); return; }
             let textLines = [];
             currentResultsCache.forEach(item => {
                 textLines.push(`【${item.part_name || '零件'}】`);
-                textLines.push(`▪ ${item.brand_name || '通用'} (${item.part_number}) : ${item.price ? '$' + Number(item.price).toLocaleString() : '請洽詢'}\n`);
+                textLines.push(`▪ 本廠料號: ${item.part_number} | 售價: ${item.price ? '$' + Number(item.price).toLocaleString() : '請洽詢'}`);
+                if (item.kit_parts) textLines.push(`▪ 建議配套組合: ${item.kit_parts}`);
+                textLines.push('');
             });
             const copyText = textLines.join('\n').trim();
             await navigator.clipboard.writeText(copyText);
-            alert('📋 報價已複製至剪貼簿！\n\n' + copyText);
+            alert('📋 報價與配套清單已複製至剪貼簿！\n\n' + copyText);
         }
 
         function clearSearchInputs() {
@@ -689,17 +644,17 @@
             const keyword = document.getElementById('search-keyword').value.trim();
 
             const resultsContainer = document.getElementById('results');
-            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行雙向比對...</p>';
+            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行綜合比對...</p>';
 
             let query = _supabase.from('parts').select(`
-                id, part_name, brand_name, part_number, oem_number, cross_reference, price, price_date, cost, supplier_name, remarks, length, width, height, image_1, image_2, image_3,
+                id, part_name, brand_name, part_number, oem_number, cross_reference, kit_parts, price, price_date, cost, supplier_name, remarks, length, width, height, image_1, image_2, image_3,
                 part_vehicles ( vehicles ( vehicle_type, brand, model, start_year, start_month, end_year, end_month ) )
             `);
 
             let conditions = [];
             selectedPartNames.forEach(name => conditions.push(`part_name.ilike.%${name}%`));
             if (keyword) {
-                ['part_name', 'part_number', 'oem_number', 'cross_reference', 'remarks'].forEach(field => conditions.push(`${field}.ilike.%${keyword}%`));
+                ['part_name', 'part_number', 'oem_number', 'cross_reference', 'kit_parts', 'remarks'].forEach(field => conditions.push(`${field}.ilike.%${keyword}%`));
             }
             if (conditions.length > 0) query = query.or(conditions.join(','));
 
@@ -725,29 +680,16 @@
             const resultsContainer = document.getElementById('results');
             if (list.length === 0) { resultsContainer.innerHTML = `<p class="text-amber-600 text-sm text-center py-6 bg-amber-50 rounded-xl">查無符合條件的零件。</p>`; return; }
 
-            const batchBar = `
-                <div class="flex items-center justify-between bg-slate-200/80 p-3 rounded-xl border mb-3">
-                    <label class="flex items-center gap-2 font-bold text-xs cursor-pointer">
-                        <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAllParts(this)"> 全選 (${list.length} 筆)
-                    </label>
-                    <button id="batch-delete-btn" onclick="batchDeleteParts()" disabled class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg disabled:opacity-40">
-                        🗑️ 批次刪除 (<span id="selected-count">0</span>)
-                    </button>
-                </div>`;
-
             const cards = list.map(item => {
                 const vehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
 
                 return `
-                    <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="flex items-start gap-2.5">
-                                <input type="checkbox" value="${item.id}" onchange="updateBatchDeleteUI()" class="part-select-checkbox mt-1">
-                                <div>
-                                    <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">${item.brand_name || '通用'}</span>
-                                    <h3 class="text-base font-bold text-slate-800 mt-1">${item.part_name}</h3>
-                                </div>
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">${item.brand_name || '通用'}</span>
+                                <h3 class="text-base font-bold text-slate-800 mt-1">${item.part_name}</h3>
                             </div>
                             <div class="text-right">
                                 <span class="text-base font-extrabold text-emerald-600 block">${item.price ? 'NT$ ' + Number(item.price).toLocaleString() : '未報價'}</span>
@@ -758,16 +700,28 @@
                             </div>
                         </div>
 
-                        <div class="bg-slate-50 p-2.5 rounded-lg border text-xs space-y-1 my-2">
-                            <div>本廠料號：<strong class="font-mono text-blue-900 bg-white px-1.5 py-0.5 rounded border">${item.part_number}</strong></div>
-                            ${item.cross_reference ? `
-                                <div class="mt-1 pt-1 border-t">
-                                    <span class="text-indigo-800 font-bold">🔗 交叉對照料號 (點擊一鍵跳轉)：</span>
-                                    <span onclick="jumpToKeywordSearch('${item.cross_reference.trim()}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}</span>
-                                </div>` : ''}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                            <div class="bg-slate-50 p-2.5 rounded-lg border">
+                                本廠料號：<strong class="font-mono text-blue-900 bg-white px-1.5 py-0.5 rounded border">${item.part_number}</strong>
+                                ${item.cross_reference ? `
+                                    <div class="mt-1.5 pt-1.5 border-t">
+                                        <span class="text-indigo-800 font-bold">🔗 交叉對照料號：</span>
+                                        <span onclick="jumpToKeywordSearch('${item.cross_reference.trim()}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}</span>
+                                    </div>` : ''}
+                            </div>
+
+                            <!-- 🚀 顯示配套組合區塊與一鍵跳轉 -->
+                            <div class="bg-amber-50/70 p-2.5 rounded-lg border border-amber-200">
+                                <span class="text-amber-900 font-bold block mb-1">🔧 建議搭配配套零組件 (點擊一鍵查詢)：</span>
+                                ${item.kit_parts ? `
+                                    <span onclick="jumpToKeywordSearch('${item.kit_parts.trim()}')" class="font-mono text-amber-900 bg-white px-1.5 py-0.5 rounded border border-amber-300 cursor-pointer hover:bg-amber-100 transition block text-[11px] leading-relaxed">
+                                        ${item.kit_parts} ↗
+                                    </span>
+                                ` : '<span class="text-slate-400 text-[11px]">尚未設定配套零件</span>'}
+                            </div>
                         </div>
 
-                        ${images.length ? `<div class="flex gap-2 my-2">${images.map(img => `<img src="${img}" class="w-16 h-16 object-cover rounded border">`).join('')}</div>` : ''}
+                        ${images.length ? `<div class="flex gap-2">${images.map(img => `<img src="${img}" class="w-16 h-16 object-cover rounded border">`).join('')}</div>` : ''}
 
                         <div class="border-t pt-2">
                             <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容底盤與車種 (點擊標籤一鍵跳轉篩選)：</span>
@@ -783,7 +737,7 @@
                     </div>`;
             }).join('');
 
-            resultsContainer.innerHTML = batchBar + cards;
+            resultsContainer.innerHTML = cards;
         }
 
         function openEditModalById(id) {
@@ -795,14 +749,12 @@
             document.getElementById('edit-part-number').value = item.part_number || '';
             document.getElementById('edit-oem-number').value = item.oem_number || '';
             document.getElementById('edit-cross-ref').value = item.cross_reference || '';
+            document.getElementById('edit-kit-parts').value = item.kit_parts || '';
             document.getElementById('edit-supplier-name').value = item.supplier_name || '';
             document.getElementById('edit-cost').value = item.cost || '';
             document.getElementById('edit-price').value = item.price || '';
             document.getElementById('edit-price-date').value = item.price_date || '';
             document.getElementById('edit-remarks').value = item.remarks || '';
-            document.getElementById('edit-length').value = item.length || '';
-            document.getElementById('edit-width').value = item.width || '';
-            document.getElementById('edit-height').value = item.height || '';
 
             const editVehicles = document.getElementById('edit-vehicles-container');
             editVehicles.innerHTML = '';
@@ -828,20 +780,13 @@
                 part_number: document.getElementById('edit-part-number').value.trim(),
                 oem_number: document.getElementById('edit-oem-number').value.trim() || null,
                 cross_reference: document.getElementById('edit-cross-ref').value.trim() || null,
+                kit_parts: document.getElementById('edit-kit-parts').value.trim() || null,
                 supplier_name: document.getElementById('edit-supplier-name').value.trim() || null,
                 cost: parseFloat(document.getElementById('edit-cost').value) || null,
                 price: parseFloat(document.getElementById('edit-price').value) || null,
                 price_date: document.getElementById('edit-price-date').value || null,
-                remarks: document.getElementById('edit-remarks').value.trim() || null,
-                length: parseFloat(document.getElementById('edit-length').value) || null,
-                width: parseFloat(document.getElementById('edit-width').value) || null,
-                height: parseFloat(document.getElementById('edit-height').value) || null
+                remarks: document.getElementById('edit-remarks').value.trim() || null
             };
-
-            const [img1, img2, img3] = await uploadImages('edit-images');
-            if (img1) updatePayload.image_1 = img1;
-            if (img2) updatePayload.image_2 = img2;
-            if (img3) updatePayload.image_3 = img3;
 
             await _supabase.from('parts').update(updatePayload).eq('id', id);
             const vehicleIds = await getOrCreateVehicleIds('edit-vehicles-container', 'edit');
@@ -864,14 +809,12 @@
                 part_number: document.getElementById('add-part-number').value.trim(),
                 oem_number: document.getElementById('add-oem-number').value.trim() || null,
                 cross_reference: document.getElementById('add-cross-ref').value.trim() || null,
+                kit_parts: document.getElementById('add-kit-parts').value.trim() || null,
                 supplier_name: document.getElementById('add-supplier-name').value.trim() || null,
                 cost: parseFloat(document.getElementById('add-cost').value) || null,
                 price: parseFloat(document.getElementById('add-price').value) || null,
                 price_date: document.getElementById('add-price-date').value || null,
-                remarks: document.getElementById('add-remarks').value.trim() || null,
-                length: parseFloat(document.getElementById('add-length').value) || null,
-                width: parseFloat(document.getElementById('add-width').value) || null,
-                height: parseFloat(document.getElementById('add-height').value) || null
+                remarks: document.getElementById('add-remarks').value.trim() || null
             };
 
             const [img1, img2, img3] = await uploadImages('add-images');
