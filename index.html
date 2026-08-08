@@ -99,8 +99,27 @@
                             <input type="text" id="add-part-number" placeholder="例如: DCP05001" class="w-full border rounded-lg p-2 text-sm font-mono">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">參考前價 (NT$)</label>
-                            <input type="number" id="add-price" placeholder="例如: 6800" class="w-full border rounded-lg p-2 text-sm">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">前次進貨廠商 (選填)</label>
+                            <input type="text" id="add-supplier-name" placeholder="例如: 台灣電綜, 永晟" class="w-full border rounded-lg p-2 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- 價格與日期區塊 -->
+                    <div class="bg-white p-3 rounded-lg border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-700 mb-2">💵 價格與成本紀錄 (選填)</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">進貨成本 (NT$)</label>
+                                <input type="number" id="add-cost" placeholder="例如: 4500" class="w-full border rounded-lg p-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">參考前價 (NT$)</label>
+                                <input type="number" id="add-price" placeholder="例如: 6800" class="w-full border rounded-lg p-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">前價日期</label>
+                                <input type="date" id="add-price-date" class="w-full border rounded-lg p-2 text-sm">
+                            </div>
                         </div>
                     </div>
 
@@ -147,7 +166,7 @@
                     
                     <!-- 動態車型列表容器 -->
                     <div id="add-vehicles-container" class="space-y-3">
-                        <!-- 由 JavaScript 自動生成第一列 -->
+                        <!-- 由 JavaScript 自動生成 -->
                     </div>
                 </div>
 
@@ -189,10 +208,27 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">參考前價 (NT$)</label>
-                            <input type="number" id="edit-price" class="w-full border rounded-lg p-2 text-sm">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">前次進貨廠商 (選填)</label>
+                        <input type="text" id="edit-supplier-name" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+
+                    <!-- 編輯價格與日期 -->
+                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
+                        <label class="block text-xs font-bold text-slate-700">💵 價格與成本紀錄</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">進貨成本</label>
+                                <input type="number" id="edit-cost" class="w-full border rounded-lg p-1.5 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">參考前價</label>
+                                <input type="number" id="edit-price" class="w-full border rounded-lg p-1.5 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">前價日期</label>
+                                <input type="date" id="edit-price-date" class="w-full border rounded-lg p-1.5 text-sm">
+                            </div>
                         </div>
                     </div>
 
@@ -279,11 +315,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             initVehicleDropdowns();
             initEnterKeyNavigation();
-            // 初始化新增零件頁面的第一組車型輸入框
             addVehicleRow('add-vehicles-container', 'add');
         });
 
-        // 建立單組車型 HTML 輸入框元件
         function createVehicleRowHTML(prefix, v = {}) {
             return `
                 <div class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
@@ -340,7 +374,6 @@
             btn.closest('.vehicle-row').remove();
         }
 
-        // 收集並批次向 Supabase 寫入/比對多台車型
         async function getOrCreateVehicleIds(containerId, prefix) {
             const container = document.getElementById(containerId);
             const rows = container.querySelectorAll('.vehicle-row');
@@ -356,7 +389,6 @@
 
                 if (!brand || !model || isNaN(startYear) || isNaN(endYear)) continue;
 
-                // 檢查車型資料庫中是否已存在同規格車型
                 const { data: existingVehicle } = await _supabase
                     .from('vehicles')
                     .select('id')
@@ -386,7 +418,7 @@
                 }
             }
 
-            return [...new Set(vehicleIds)]; // 去除重複 ID
+            return [...new Set(vehicleIds)];
         }
 
         function initEnterKeyNavigation() {
@@ -548,7 +580,7 @@
             const keywords = rawPartInput.split(/[,，\s\n、]+/).map(k => k.trim()).filter(k => k.length > 0);
 
             let query = _supabase.from('parts').select(`
-                id, part_name, brand_name, part_number, price, remarks, length, width, height, image_1, image_2, image_3,
+                id, part_name, brand_name, part_number, price, price_date, cost, supplier_name, remarks, length, width, height, image_1, image_2, image_3,
                 part_vehicles (
                     vehicles ( brand, model, start_year, start_month, end_year, end_month )
                 )
@@ -607,6 +639,8 @@
                             <div class="text-right whitespace-nowrap space-y-1">
                                 <span class="text-[10px] text-slate-400 block">參考前價</span>
                                 <span class="text-base font-extrabold text-emerald-600 block">${item.price ? 'NT$ ' + Number(item.price).toLocaleString() : '未填寫'}</span>
+                                ${item.price_date ? `<span class="text-[10px] text-slate-400 block">🗓️ ${item.price_date}</span>` : ''}
+                                
                                 <div class="flex gap-1.5 justify-end pt-1">
                                     ${images.length > 0 ? `
                                         <button onclick="openGalleryModal(${item.id})" class="inline-flex items-center gap-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2 py-1 rounded border border-emerald-200 transition font-medium">
@@ -616,17 +650,18 @@
                                     <button onclick="openEditModalById(${item.id})" class="inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-blue-50 text-blue-600 hover:text-blue-700 px-2 py-1 rounded border border-slate-200 transition font-medium">
                                         ✏️ 編輯
                                     </button>
+                                    <button onclick="deletePart(${item.id})" class="inline-flex items-center gap-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 px-2 py-1 rounded border border-red-200 transition font-medium">
+                                        🗑️ 刪除
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
                         <div class="text-xs text-slate-600 mb-2 flex flex-wrap gap-2 items-center">
                             <span>料號：<span class="font-mono bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-800 border">${item.part_number ? item.part_number : '未提供'}</span></span>
-                            ${dimText ? `
-                                <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-mono text-[11px] font-semibold">
-                                    📐 ${dimText}
-                                </span>
-                            ` : ''}
+                            ${item.cost ? `<span class="bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200 text-[11px] font-semibold">💰 成本: NT$ ${Number(item.cost).toLocaleString()}</span>` : ''}
+                            ${item.supplier_name ? `<span class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-200 text-[11px] font-semibold">🏭 廠商: ${item.supplier_name}</span>` : ''}
+                            ${dimText ? `<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-mono text-[11px] font-semibold">📐 ${dimText}</span>` : ''}
                         </div>
 
                         ${item.remarks ? `
@@ -648,6 +683,32 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // 刪除零件功能
+        async function deletePart(id) {
+            const item = currentResultsCache.find(p => p.id === id);
+            const partName = item ? item.part_name : '該零件';
+
+            if (!confirm(`⚠️ 確定要刪除「${partName}」嗎？\n這將會移除此零件的所有通用車型綁定，此動作無法復原！`)) {
+                return;
+            }
+
+            try {
+                // 1. 刪除關聯車型對應
+                await _supabase.from('part_vehicles').delete().eq('part_id', id);
+
+                // 2. 刪除零件主檔
+                const { error } = await _supabase.from('parts').delete().eq('id', id);
+
+                if (error) throw error;
+
+                alert('✅ 零件資料已成功刪除！');
+                initVehicleDropdowns();
+                searchParts();
+            } catch (err) {
+                alert('❌ 刪除失敗：' + err.message);
+            }
         }
 
         function openGalleryModal(id) {
@@ -696,7 +757,11 @@
             document.getElementById('edit-part-name').value = item.part_name || '';
             document.getElementById('edit-brand-name').value = item.brand_name || '';
             document.getElementById('edit-part-number').value = item.part_number || '';
+            document.getElementById('edit-supplier-name').value = item.supplier_name || '';
+            
+            document.getElementById('edit-cost').value = item.cost !== null ? item.cost : '';
             document.getElementById('edit-price').value = item.price !== null ? item.price : '';
+            document.getElementById('edit-price-date').value = item.price_date || '';
             document.getElementById('edit-remarks').value = item.remarks || '';
 
             document.getElementById('edit-length').value = item.length !== null && item.length !== undefined ? item.length : '';
@@ -714,7 +779,6 @@
                 previewContainer.appendChild(img);
             });
 
-            // 渲染多組編輯車型
             const editVehiclesContainer = document.getElementById('edit-vehicles-container');
             editVehiclesContainer.innerHTML = '';
             const vehicles = item.part_vehicles.map(pv => pv.vehicles).filter(Boolean);
@@ -747,7 +811,11 @@
             const partName = document.getElementById('edit-part-name').value.trim();
             const brandName = document.getElementById('edit-brand-name').value.trim();
             const partNumber = document.getElementById('edit-part-number').value.trim() || null;
+            const supplierName = document.getElementById('edit-supplier-name').value.trim() || null;
+            
+            const cost = parseFloat(document.getElementById('edit-cost').value) || null;
             const price = parseFloat(document.getElementById('edit-price').value) || null;
+            const priceDate = document.getElementById('edit-price-date').value || null;
             const remarks = document.getElementById('edit-remarks').value.trim() || null;
 
             const length = document.getElementById('edit-length').value ? parseFloat(document.getElementById('edit-length').value) : null;
@@ -761,7 +829,10 @@
                     part_name: partName,
                     brand_name: brandName,
                     part_number: partNumber,
+                    supplier_name: supplierName,
+                    cost: cost,
                     price: price,
+                    price_date: priceDate,
                     remarks: remarks,
                     length: length,
                     width: width,
@@ -774,14 +845,10 @@
                     updatePayload.image_3 = img3;
                 }
 
-                // 1. 更新零件主檔
                 const { error: partError } = await _supabase.from('parts').update(updatePayload).eq('id', id);
                 if (partError) throw partError;
 
-                // 2. 獲取編輯視窗中所有車型的 ID 陣列
                 const vehicleIds = await getOrCreateVehicleIds('edit-vehicles-container', 'edit');
-
-                // 3. 刪除舊有對應關聯，並重構新的多車型關聯
                 await _supabase.from('part_vehicles').delete().eq('part_id', id);
 
                 if (vehicleIds.length > 0) {
@@ -812,7 +879,11 @@
             const partName = document.getElementById('add-part-name').value.trim();
             const brandName = document.getElementById('add-brand-name').value.trim();
             const partNumber = document.getElementById('add-part-number').value.trim() || null;
+            const supplierName = document.getElementById('add-supplier-name').value.trim() || null;
+
+            const cost = parseFloat(document.getElementById('add-cost').value) || null;
             const price = parseFloat(document.getElementById('add-price').value) || null;
+            const priceDate = document.getElementById('add-price-date').value || null;
             const remarks = document.getElementById('add-remarks').value.trim() || null;
 
             const length = document.getElementById('add-length').value ? parseFloat(document.getElementById('add-length').value) : null;
@@ -822,14 +893,16 @@
             try {
                 const [img1, img2, img3] = await uploadImages('add-images');
 
-                // 1. 新增零件主檔
                 const { data: partData, error: partError } = await _supabase
                     .from('parts')
                     .insert([{
                         part_name: partName,
                         brand_name: brandName,
                         part_number: partNumber,
+                        supplier_name: supplierName,
+                        cost: cost,
                         price: price,
+                        price_date: priceDate,
                         remarks: remarks,
                         length: length,
                         width: width,
@@ -843,10 +916,8 @@
                 if (partError) throw partError;
                 const newPartId = partData[0].id;
 
-                // 2. 獲取新增區域中填寫的所有車型 ID
                 const vehicleIds = await getOrCreateVehicleIds('add-vehicles-container', 'add');
 
-                // 3. 綁定多車型關聯
                 if (vehicleIds.length > 0) {
                     const mappings = vehicleIds.map(vId => ({ part_id: newPartId, vehicle_id: vId }));
                     const { error: mapError } = await _supabase.from('part_vehicles').insert(mappings);
@@ -857,7 +928,7 @@
                 document.getElementById('add-part-form').reset();
                 document.getElementById('add-preview-container').innerHTML = '';
                 document.getElementById('add-vehicles-container').innerHTML = '';
-                addVehicleRow('add-vehicles-container', 'add'); // 重置為一組空白車型輸入框
+                addVehicleRow('add-vehicles-container', 'add');
                 
                 initVehicleDropdowns();
                 switchTab('search');
