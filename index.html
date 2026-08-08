@@ -9,18 +9,11 @@
 </head>
 <body class="bg-slate-100 min-h-screen p-3 md:p-8 text-slate-800">
 
-    <!-- 全域歷史選單 DataLists -->
+    <!-- 全域歷史選單 DataLists (完全由歷史資料動態建立，可自由手動輸入) -->
     <datalist id="part-name-list"></datalist>
     <datalist id="part-brand-list"></datalist>
     <datalist id="supplier-list"></datalist>
-    <datalist id="vehicle-type-list">
-        <option value="轎車">
-        <option value="休旅/商用車">
-        <option value="貨車/卡車">
-        <option value="農機/曳引機">
-        <option value="怪手/工程重機">
-        <option value="巴士/客運">
-    </datalist>
+    <datalist id="vehicle-type-list"></datalist> <!-- 自由輸入，歷史建議 -->
     <datalist id="brand-list"></datalist>
     <datalist id="model-list"></datalist>
 
@@ -66,11 +59,12 @@
                 <div id="vin-status" class="hidden"></div>
             </div>
 
-            <!-- 複合搜尋條件 (包含零件複選區與料號關鍵字) -->
+            <!-- 複合搜尋條件 -->
             <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <!-- 自訂車種類別 (可自由輸入/選擇) -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別</label>
-                    <input type="text" id="search-vehicle-type" list="vehicle-type-list" placeholder="轎車 / 農機 / 貨車..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別 (可自由輸入)</label>
+                    <input type="text" id="search-vehicle-type" list="vehicle-type-list" placeholder="手動輸入或選擇..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <div>
@@ -88,19 +82,21 @@
                     <input type="number" id="search-year" placeholder="例: 2015" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
-                <!-- 零件名稱複選下拉選單 -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">📦 零件名稱 (可複選)</label>
-                    <select id="search-part" multiple class="w-full border rounded-lg p-1.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none h-20 bg-white">
-                        <!-- 由 Supabase 動態載入歷史零件名稱 -->
-                    </select>
-                    <span class="text-[10px] text-slate-400 block mt-0.5">按住 Ctrl / Cmd 可多選</span>
+                <!-- 💡 直覺免 CTRL 零件名稱點擊複選區域 -->
+                <div class="md:col-span-2">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-600">📦 零件名稱 (直接點擊按鈕複選)</label>
+                        <button type="button" onclick="clearSelectedParts()" class="text-[11px] text-blue-600 hover:underline">清除選取</button>
+                    </div>
+                    <div id="part-chips-container" class="flex flex-wrap gap-1.5 p-2 bg-white border border-slate-200 rounded-lg min-h-[4.5rem] max-h-24 overflow-y-auto">
+                        <span class="text-xs text-slate-400">載入歷史零件中...</span>
+                    </div>
                 </div>
 
                 <!-- 料號與關聯對照關鍵字 -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">本廠 / OEM / 交叉料號</label>
-                    <input type="text" id="search-keyword" placeholder="例: DCP05001 / 6452..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="md:col-span-6 border-t pt-2 mt-1">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">🔍 本廠 / OEM / 交叉料號 / 備註關鍵字搜尋</label>
+                    <input type="text" id="search-keyword" placeholder="輸入料號例: DCP05001 / 6452... (按 Enter 可直接查詢)" onkeydown="if(event.key==='Enter') searchParts()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
             </div>
 
@@ -119,7 +115,7 @@
 
             <!-- 結果顯示 -->
             <div id="results" class="space-y-4">
-                <p class="text-slate-400 text-sm text-center py-6">請選擇零件、輸入條件或 VIN 碼。</p>
+                <p class="text-slate-400 text-sm text-center py-6">請選擇條件或輸入 VIN 碼進行查詢。</p>
             </div>
         </div>
 
@@ -129,17 +125,17 @@
                 
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <h2 class="font-bold text-sm text-slate-700 border-b pb-2 flex items-center gap-1">
-                        📦 基本零件主檔與品牌 (帶入歷史輸入選單)
+                        📦 基本零件主檔與品牌
                     </h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *</label>
-                            <input type="text" id="add-part-name" list="part-name-list" required placeholder="例如: 風箱 / 壓縮機 (可搜尋歷史紀錄)" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="add-part-name" list="part-name-list" required placeholder="可自由輸入 (例: 風箱 / 壓縮機)" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件品牌/製造商 *</label>
-                            <input type="text" id="add-brand-name" list="part-brand-list" required placeholder="例如: 正廠 / 副廠 / Denso" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="add-brand-name" list="part-brand-list" required placeholder="可自由輸入 (例: 正廠 / 副廠 / Denso)" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                     </div>
 
@@ -211,10 +207,10 @@
                     </div>
                 </div>
 
-                <!-- 通用車型資訊 (包含車種類別) -->
+                <!-- 通用車型資訊 (車種類別自由輸入) -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <div class="flex justify-between items-center border-b pb-2">
-                        <h2 class="font-bold text-sm text-slate-700">🚘 適用車型與車種類別 (轎車/農機/貨車等)</h2>
+                        <h2 class="font-bold text-sm text-slate-700">🚘 適用車型與車種類別 (可自訂任何車種類別)</h2>
                         <button type="button" onclick="addVehicleRow('add-vehicles-container', 'add')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-lg border border-blue-200 transition">
                             ➕ 新增一台車型
                         </button>
@@ -342,47 +338,91 @@
 
         let currentResultsCache = [];
         let allVehiclesCache = [];
+        
+        // 💡 紀錄直覺式零件點選選取的集合 (Set)
+        let selectedPartNamesSet = new Set();
+        let allPartNamesCache = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             initHistoryDatalists();
             addVehicleRow('add-vehicles-container', 'add');
         });
 
-        /* ================= 💡 動態讀取歷史輸入記錄 (自動帶入複選選單與 DataLists) ================= */
+        /* ================= 💡 動態讀取歷史輸入記錄 (自動建置完全自由的選單與 Chips) ================= */
         async function initHistoryDatalists() {
             try {
                 // 1. 零件歷史記錄
                 const { data: parts } = await _supabase.from('parts').select('part_name, brand_name, supplier_name');
                 if (parts) {
-                    const names = [...new Set(parts.map(p => p.part_name).filter(Boolean))];
-                    const brands = [...new Set(parts.map(p => p.brand_name).filter(Boolean))];
-                    const suppliers = [...new Set(parts.map(p => p.supplier_name).filter(Boolean))];
+                    allPartNamesCache = [...new Set(parts.map(p => p.part_name ? p.part_name.trim() : '').filter(Boolean))];
+                    const brands = [...new Set(parts.map(p => p.brand_name ? p.brand_name.trim() : '').filter(Boolean))];
+                    const suppliers = [...new Set(parts.map(p => p.supplier_name ? p.supplier_name.trim() : '').filter(Boolean))];
 
-                    // 填入零件名稱複選選單 (<select id="search-part">)
-                    const searchPartSelect = document.getElementById('search-part');
-                    if (searchPartSelect) {
-                        searchPartSelect.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
-                    }
+                    // 渲染免 CTRL 直覺式點擊按鈕區 (Chips)
+                    renderPartChipsUI();
 
-                    document.getElementById('part-name-list').innerHTML = names.map(n => `<option value="${n}">`).join('');
+                    document.getElementById('part-name-list').innerHTML = allPartNamesCache.map(n => `<option value="${n}">`).join('');
                     document.getElementById('part-brand-list').innerHTML = brands.map(b => `<option value="${b}">`).join('');
                     document.getElementById('supplier-list').innerHTML = suppliers.map(s => `<option value="${s}">`).join('');
                 }
 
-                // 2. 車型與車種歷史記錄
+                // 2. 車型與車種類別歷史記錄 (完全無預設限制，從 DB 歷史建置)
                 const { data: vehicles } = await _supabase.from('vehicles').select('vehicle_type, brand, model');
                 if (vehicles) {
                     allVehiclesCache = vehicles || [];
-                    const types = [...new Set(['轎車', '休旅/商用車', '貨車/卡車', '農機/曳引機', '怪手/工程重機', '巴士/客運', ...vehicles.map(v => v.vehicle_type).filter(Boolean)])];
-                    const vBrands = [...new Set(vehicles.map(v => v.brand).filter(Boolean))];
+                    
+                    // 完全由 DB 收集已有類別，不硬編碼任何選單
+                    const customTypes = [...new Set(vehicles.map(v => v.vehicle_type ? v.vehicle_type.trim() : '').filter(Boolean))];
+                    const vBrands = [...new Set(vehicles.map(v => v.brand ? v.brand.trim() : '').filter(Boolean))];
 
-                    document.getElementById('vehicle-type-list').innerHTML = types.map(t => `<option value="${t}">`).join('');
+                    document.getElementById('vehicle-type-list').innerHTML = customTypes.map(t => `<option value="${t}">`).join('');
                     document.getElementById('brand-list').innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
                     updateModelDatalist();
                 }
             } catch (e) {
                 console.warn('載入歷史 DataList 失敗:', e);
             }
+        }
+
+        /* 💡 渲染直覺點擊複選的零件 Chips UI */
+        function renderPartChipsUI() {
+            const container = document.getElementById('part-chips-container');
+            if (!container) return;
+
+            if (allPartNamesCache.length === 0) {
+                container.innerHTML = `<span class="text-xs text-slate-400">目前尚無零件歷史資料</span>`;
+                return;
+            }
+
+            container.innerHTML = allPartNamesCache.map(name => {
+                const isSelected = selectedPartNamesSet.has(name);
+                const btnClass = isSelected 
+                    ? 'bg-blue-600 text-white font-bold border-blue-700 shadow-sm' 
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200';
+                
+                return `
+                    <button type="button" onclick="togglePartSelection('${name}')" 
+                            class="px-2.5 py-1 rounded-lg text-xs border transition flex items-center gap-1 ${btnClass}">
+                        ${isSelected ? '✓ ' : ''}${name}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        /* 切換選取狀態 */
+        function togglePartSelection(name) {
+            if (selectedPartNamesSet.has(name)) {
+                selectedPartNamesSet.delete(name);
+            } else {
+                selectedPartNamesSet.add(name);
+            }
+            renderPartChipsUI();
+        }
+
+        /* 清除零件點選 */
+        function clearSelectedParts() {
+            selectedPartNamesSet.clear();
+            renderPartChipsUI();
         }
 
         /* ================= ⚡ VIN 車身碼解析 ================= */
@@ -543,13 +583,9 @@
             document.getElementById('search-brand').value = '';
             document.getElementById('search-model').value = '';
             document.getElementById('search-year').value = '';
-            
-            // 清除零件名複選狀態
-            const partSelect = document.getElementById('search-part');
-            if (partSelect) {
-                Array.from(partSelect.options).forEach(opt => opt.selected = false);
-            }
             document.getElementById('search-keyword').value = '';
+            
+            clearSelectedParts();
 
             document.getElementById('vin-status').classList.add('hidden');
             updateModelDatalist('');
@@ -557,6 +593,7 @@
             currentResultsCache = [];
         }
 
+        /* 建立可自由手動輸入的車種類別輸入框 HTML */
         function createVehicleRowHTML(prefix, v = {}) {
             return `
                 <div class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
@@ -566,8 +603,8 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-12">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *</label>
-                            <input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm" list="vehicle-type-list" required placeholder="例: 轎車 / 農機 / 貨車" value="${v.vehicle_type || '轎車'}">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 (可自由輸入) *</label>
+                            <input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm" list="vehicle-type-list" required placeholder="自訂例: 轎車 / 農機 / 艇" value="${v.vehicle_type || ''}">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *</label>
@@ -715,18 +752,17 @@
             document.getElementById('tab-add-btn').className = tab === 'add' ? 'pb-2 border-b-2 border-blue-600 font-semibold text-blue-600' : 'pb-2 font-semibold text-slate-500';
         }
 
-        /* 🔍 綜合查詢零件 (支援多選零件名與關聯對照) */
+        /* 🔍 綜合查詢零件 (支援免 CTRL 點擊複選與自由車種比對) */
         async function searchParts() {
             const searchVType = document.getElementById('search-vehicle-type').value.trim().toLowerCase();
             const searchBrand = document.getElementById('search-brand').value.trim().toLowerCase();
             const searchModel = document.getElementById('search-model').value.trim().toLowerCase();
             const year = parseInt(document.getElementById('search-year').value);
             
-            // 取得複選選取的零件名稱陣列
-            const partSelect = document.getElementById('search-part');
-            const selectedPartNames = Array.from(partSelect.selectedOptions).map(opt => opt.value.trim()).filter(Boolean);
+            // 讀取點選選取的零件集合
+            const selectedPartNames = Array.from(selectedPartNamesSet);
             
-            // 取得料號 / 關聯對照關鍵字
+            // 關鍵字搜尋 (料號/交叉號/備註)
             const keyword = document.getElementById('search-keyword').value.trim();
 
             const resultsContainer = document.getElementById('results');
@@ -740,14 +776,12 @@
             // 建立 OR 條件集合
             const conditions = [];
 
-            // 1. 零件名稱複選條件
             if (selectedPartNames.length > 0) {
                 selectedPartNames.forEach(name => {
                     conditions.push(`part_name.ilike.%${name}%`);
                 });
             }
 
-            // 2. 料號與交叉對照關鍵字條件
             if (keyword) {
                 conditions.push(`part_name.ilike.%${keyword}%`);
                 conditions.push(`part_number.ilike.%${keyword}%`);
@@ -842,7 +876,7 @@
                         <div class="border-t pt-2">
                             <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容底盤與車種 (${allVehicles.length} 台)：</span>
                             <div class="flex flex-wrap gap-1">
-                                ${allVehicles.map(v => `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded border"><b class="text-blue-800">[${v.vehicle_type || '車型'}]</b> ${v.brand} ${v.model} (${v.start_year}-${v.end_year})</span>`).join('')}
+                                ${allVehicles.map(v => `<span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded border"><b class="text-blue-800">[${v.vehicle_type || '車種'}]</b> ${v.brand} ${v.model} (${v.start_year}-${v.end_year})</span>`).join('')}
                             </div>
                         </div>
                     </div>
