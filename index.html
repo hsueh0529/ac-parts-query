@@ -358,7 +358,9 @@
         let selectedPartNamesSet = new Set();
         let allPartNamesCache = [];
         let isSyncing = false;
-        let editCurrentImages = [];
+        
+        let editCurrentImages = []; // 已上傳且存在資料庫的圖片 URL
+        let editNewFiles = [];      // 編輯時新挑選準備上傳的 File 物件
 
         document.addEventListener('DOMContentLoaded', () => {
             initHistoryDatalists();
@@ -687,40 +689,58 @@
             });
         }
 
+        // 修正後的編輯照片預覽與管理邏輯
         function renderEditImagesPreview() {
             const container = document.getElementById('edit-preview-container');
             container.innerHTML = '';
-            if (editCurrentImages.length === 0) {
+            
+            if (editCurrentImages.length === 0 && editNewFiles.length === 0) {
                 container.innerHTML = `<span class="text-xs text-slate-400">目前無照片</span>`;
                 return;
             }
+
+            // 渲染資料庫原有的圖片
             editCurrentImages.forEach((url, index) => {
                 container.innerHTML += `
                     <div class="relative inline-block">
                         <img src="${url}" class="w-16 h-16 object-cover rounded border cursor-pointer" onclick="window.open('${url}', '_blank')">
-                        <button type="button" onclick="removeEditImage(${index})" class="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow hover:bg-red-700" title="刪除此張圖片">&times;</button>
+                        <button type="button" onclick="removeEditExistingImage(${index})" class="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow hover:bg-red-700" title="刪除此張圖片">&times;</button>
+                    </div>
+                `;
+            });
+
+            // 渲染新挑選準備上傳的圖片 (透過 ObjectURL 預覽)
+            editNewFiles.forEach((file, index) => {
+                const objUrl = URL.createObjectURL(file);
+                container.innerHTML += `
+                    <div class="relative inline-block">
+                        <img src="${objUrl}" class="w-16 h-16 object-cover rounded border cursor-pointer" onclick="window.open('${objUrl}', '_blank')">
+                        <button type="button" onclick="removeEditNewFile(${index})" class="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow hover:bg-red-700" title="刪除此張圖片">&times;</button>
                     </div>
                 `;
             });
         }
 
-        function removeEditImage(index) {
+        function removeEditExistingImage(index) {
             editCurrentImages.splice(index, 1);
+            renderEditImagesPreview();
+        }
+
+        function removeEditNewFile(index) {
+            editNewFiles.splice(index, 1);
             renderEditImagesPreview();
         }
 
         function previewNewEditImages(event) {
             const files = Array.from(event.target.files);
-            files.slice(0, 3 - editCurrentImages.length).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    if (editCurrentImages.length < 3) {
-                        editCurrentImages.push(e.target.result);
-                        renderEditImagesPreview();
-                    }
-                };
-                reader.readAsDataURL(file);
+            const maxAllowed = 3 - (editCurrentImages.length + editNewFiles.length);
+            const acceptedFiles = files.slice(0, maxAllowed);
+            
+            acceptedFiles.forEach(file => {
+                editNewFiles.push(file);
             });
+            renderEditImagesPreview();
+            event.target.value = ''; // 清空 file input 以便重複選擇同一張圖
         }
 
         async function uploadImages(fileInputId) {
@@ -734,6 +754,21 @@
                 if (!error) {
                     const { data } = _supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
                     urls[i] = data.publicUrl;
+                }
+            }
+            return urls;
+        }
+
+        // 專門用於上傳編輯時新加入的照片檔案
+        async function uploadNewEditImages() {
+            let urls = [];
+            for (let i = 0; i < editNewFiles.length; i++) {
+                const file = editNewFiles[i];
+                const filePath = `parts/${Date.now()}_edit_${i}.${file.name.split('.').pop()}`;
+                const { error } = await _supabase.storage.from(STORAGE_BUCKET).upload(filePath, file);
+                if (!error) {
+                    const { data } = _supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+                    urls.push(data.publicUrl);
                 }
             }
             return urls;
@@ -1042,6 +1077,7 @@
             document.getElementById('edit-remarks').value = item.remarks || '';
 
             editCurrentImages = [item.image_1, item.image_2, item.image_3].filter(Boolean);
+            editNewFiles = []; // 清空待上傳暫存
             renderEditImagesPreview();
             document.getElementById('edit-images').value = '';
 
@@ -1066,6 +1102,10 @@
             const partNum = document.getElementById('edit-part-number').value.trim();
             const crossRefText = document.getElementById('edit-cross-ref').value.trim();
 
+            // 上傳新選取的圖片並取得 URL
+            const newlyUploadedUrls = await uploadNewEditImages();
+            const finalImages = [...editCurrentImages, ...newlyUploadedUrls].slice(0, 3);
+
             const updatePayload = {
                 part_name: document.getElementById('edit-part-name').value.trim(),
                 brand_name: document.getElementById('edit-brand-name').value.trim(),
@@ -1081,23 +1121,10 @@
                 price: parseFloat(document.getElementById('edit-price').value) || null,
                 price_date: document.getElementById('edit-price-date').value || null,
                 remarks: document.getElementById('edit-remarks').value.trim() || null,
-                image_1: editCurrentImages[0] || null,
-                image_2: editCurrentImages[1] || null,
-                image_3: editCurrentImages[2] || null
+                image_1: finalImages[0] || null,
+                image_2: finalImages[1] || null,
+                image_3: finalImages[2] || null
             };
-
-            const fileInput = document.getElementById('edit-images');
-            if (fileInput && fileInput.files.length > 0) {
-                const [img1, img2, img3] = await uploadImages('edit-images');
-                [img1, img2, img3].forEach(imgUrl => {
-                    if (imgUrl && editCurrentImages.length < 3) {
-                        editCurrentImages.push(imgUrl);
-                    }
-                });
-                updatePayload.image_1 = editCurrentImages[0] || null;
-                updatePayload.image_2 = editCurrentImages[1] || null;
-                updatePayload.image_3 = editCurrentImages[2] || null;
-            }
 
             await _supabase.from('parts').update(updatePayload).eq('id', id);
             await syncCrossReferences(partNum, crossRefText);
