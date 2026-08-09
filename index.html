@@ -48,7 +48,7 @@
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">❄️HW零件管理系統</span>
+            <span class="flex items-center gap-2">❄️HW空調零件與配套組合管理系統</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
             </span>
@@ -430,8 +430,8 @@
         let editCurrentImages = []; 
         let editNewFiles = [];      
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initHistoryDatalists();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initHistoryDatalists();
             addVehicleRow('add-vehicles-container', 'add');
 
             // 點擊頁面其他地方時隱藏所有的自訂下拉建議選單
@@ -507,6 +507,11 @@
                     // 同步更新現有車型列中的品牌 datalist
                     document.querySelectorAll('datalist[id^="brand-list-dynamic"]').forEach(dl => {
                         dl.innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
+                    });
+                    // 同步更新現有車型列中的車型 datalist
+                    document.querySelectorAll('datalist[id^="model-list-dynamic"]').forEach(dl => {
+                        const models = [...new Set(vehicles.map(v => v.model ? v.model.trim() : '').filter(Boolean))];
+                        dl.innerHTML = models.map(m => `<option value="${m}">`).join('');
                     });
                 }
             } catch (e) { console.warn(e); }
@@ -743,16 +748,21 @@
             
             // 預先取得現有品牌的對應車型選項
             const vBrands = [...new Set(allVehiclesCache.map(veh => veh.brand ? veh.brand.trim() : '').filter(Boolean))];
+            const vModels = [...new Set(allVehiclesCache.map(veh => veh.model ? veh.model.trim() : '').filter(Boolean))];
             
             setTimeout(() => {
-                const dl = document.getElementById(brandDatalistId);
-                if (dl) dl.innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
-                if (v.brand) {
-                    // 若有帶入初始品牌 (如編輯時)，更新對應的 model datalist
-                    const rowEl = document.getElementById(`veh-row-${uniqueId}`);
-                    if (rowEl) {
-                        const modelInput = rowEl.querySelector(`.${prefix}-v-model`);
-                        if (modelInput) updateDynamicModelList(modelInput, v.brand);
+                const brandDl = document.getElementById(brandDatalistId);
+                const modelDl = document.getElementById(modelDatalistId);
+                if (brandDl) brandDl.innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
+                if (modelDl) {
+                    if (v.brand) {
+                        const rowEl = document.getElementById(`veh-row-${uniqueId}`);
+                        if (rowEl) {
+                            const modelInput = rowEl.querySelector(`.${prefix}-v-model`);
+                            if (modelInput) updateDynamicModelList(modelInput, v.brand, modelDatalistId);
+                        }
+                    } else {
+                        modelDl.innerHTML = vModels.map(m => `<option value="${m}">`).join('');
                     }
                 }
             }, 50);
@@ -806,7 +816,7 @@
             const datalistEl = document.getElementById(datalistId);
             if (!datalistEl) return;
 
-            const selectedBrand = brandVal.trim().toLowerCase();
+            const selectedBrand = brandVal ? brandVal.trim().toLowerCase() : '';
             let filtered = selectedBrand ? allVehiclesCache.filter(v => v.brand && v.brand.toLowerCase().includes(selectedBrand)) : allVehiclesCache;
             const models = [...new Set(filtered.map(v => v.model ? v.model.trim() : '').filter(Boolean))];
             datalistEl.innerHTML = models.map(m => `<option value="${m}">`).join('');
