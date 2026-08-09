@@ -48,7 +48,7 @@
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">❄️HW空調零件與配套組合管理系統</span>
+            <span class="flex items-center gap-2">❄️HW空調零件管理系統</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
             </span>
@@ -745,8 +745,12 @@
             const uniqueId = Math.random().toString(36).substring(2, 9);
             const brandDatalistId = `brand-list-dynamic-${uniqueId}`;
             const modelDatalistId = `model-list-dynamic-${uniqueId}`;
+            const vtypeDatalistId = `vehicle-type-list`;
             
-            // 預先取得現有品牌的對應車型選項
+            const brandDropdownId = `brand-dropdown-${uniqueId}`;
+            const modelDropdownId = `model-dropdown-${uniqueId}`;
+            const vtypeDropdownId = `vtype-dropdown-${uniqueId}`;
+            
             const vBrands = [...new Set(allVehiclesCache.map(veh => veh.brand ? veh.brand.trim() : '').filter(Boolean))];
             const vModels = [...new Set(allVehiclesCache.map(veh => veh.model ? veh.model.trim() : '').filter(Boolean))];
             
@@ -771,20 +775,28 @@
                 <div id="veh-row-${uniqueId}" class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
                     <button type="button" onclick="removeVehicleRow(this)" class="absolute top-2 right-2 text-red-500 text-xs font-bold px-2 py-1">🗑️ 刪除</button>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-12">
-                        <div class="relative"><label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *</label><input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm bg-white" list="vehicle-type-list" required value="${v.vehicle_type || ''}" oninput="showSuggestionsForElement(this, 'vehicle-type-list')" onfocus="showSuggestionsForElement(this, 'vehicle-type-list')"></div>
+                        <div class="relative">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *</label>
+                            <input type="text" id="${prefix}-v-type-${uniqueId}" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm bg-white" list="${vtypeDatalistId}" required value="${v.vehicle_type || ''}" 
+                                   oninput="showSuggestions('${prefix}-v-type-${uniqueId}', '${vtypeDatalistId}', '${vtypeDropdownId}')" 
+                                   onfocus="showSuggestions('${prefix}-v-type-${uniqueId}', '${vtypeDatalistId}', '${vtypeDropdownId}')">
+                            <div id="${vtypeDropdownId}" class="suggestions-dropdown hidden"></div>
+                        </div>
                         <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *</label>
-                            <input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm bg-white" list="${brandDatalistId}" required value="${v.brand || ''}" 
-                                   oninput="handleDynamicBrandInput(this, '${modelDatalistId}'); showSuggestionsForElement(this, '${brandDatalistId}')" 
-                                   onfocus="showSuggestionsForElement(this, '${brandDatalistId}')">
+                            <input type="text" id="${prefix}-v-brand-${uniqueId}" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm bg-white" list="${brandDatalistId}" required value="${v.brand || ''}" 
+                                   oninput="handleDynamicBrandInput(this, '${modelDatalistId}'); showSuggestions('${prefix}-v-brand-${uniqueId}', '${brandDatalistId}', '${brandDropdownId}')" 
+                                   onfocus="showSuggestions('${prefix}-v-brand-${uniqueId}', '${brandDatalistId}', '${brandDropdownId}')">
                             <datalist id="${brandDatalistId}"></datalist>
+                            <div id="${brandDropdownId}" class="suggestions-dropdown hidden"></div>
                         </div>
                         <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">底盤 / 車型 *</label>
-                            <input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm bg-white" list="${modelDatalistId}" required value="${v.model || ''}" 
-                                   oninput="showSuggestionsForElement(this, '${modelDatalistId}')" 
-                                   onfocus="showSuggestionsForElement(this, '${modelDatalistId}')">
+                            <input type="text" id="${prefix}-v-model-${uniqueId}" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm bg-white" list="${modelDatalistId}" required value="${v.model || ''}" 
+                                   oninput="showSuggestions('${prefix}-v-model-${uniqueId}', '${modelDatalistId}', '${modelDropdownId}')" 
+                                   onfocus="showSuggestions('${prefix}-v-model-${uniqueId}', '${modelDatalistId}', '${modelDropdownId}')">
                             <datalist id="${modelDatalistId}"></datalist>
+                            <div id="${modelDropdownId}" class="suggestions-dropdown hidden"></div>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -820,45 +832,6 @@
             let filtered = selectedBrand ? allVehiclesCache.filter(v => v.brand && v.brand.toLowerCase().includes(selectedBrand)) : allVehiclesCache;
             const models = [...new Set(filtered.map(v => v.model ? v.model.trim() : '').filter(Boolean))];
             datalistEl.innerHTML = models.map(m => `<option value="${m}">`).join('');
-        }
-
-        // 動態車型列的即時選單輔助
-        function showSuggestionsForElement(inputEl, datalistId) {
-            let dropdown = inputEl.nextElementSibling;
-            if (!dropdown || !dropdown.classList.contains('suggestions-dropdown')) {
-                dropdown = document.createElement('div');
-                dropdown.className = 'suggestions-dropdown hidden';
-                inputEl.parentNode.style.position = 'relative';
-                inputEl.parentNode.appendChild(dropdown);
-            }
-
-            const val = inputEl.value.trim().toLowerCase();
-            const datalist = document.getElementById(datalistId);
-            if (!datalist) return;
-            const options = Array.from(datalist.querySelectorAll('option')).map(opt => opt.value);
-            const filtered = options.filter(opt => opt.toLowerCase().includes(val));
-
-            if (filtered.length === 0) {
-                dropdown.classList.add('hidden');
-                return;
-            }
-
-            dropdown.innerHTML = filtered.map(item => `
-                <div class="suggestion-item" onclick="selectElementValue(this, '${item.replace(/'/g, "\\'")}')">
-                    ${item}
-                </div>
-            `).join('');
-            dropdown.classList.remove('hidden');
-        }
-
-        function selectElementValue(itemEl, value) {
-            const dropdown = itemEl.closest('.suggestions-dropdown');
-            const input = dropdown.previousElementSibling;
-            if (input) {
-                input.value = value;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-            dropdown.classList.add('hidden');
         }
 
         function addVehicleRow(containerId, prefix, vData = {}) {
