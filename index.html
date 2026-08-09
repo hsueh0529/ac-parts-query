@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>空調零件通用資料庫 (報價無配套、僅顯示前價)</title>
+    <title>HW零件資料庫</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -20,7 +20,7 @@
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">❄️ 汽車/農機空調零件與配套組合管理系統</span>
+            <span class="flex items-center gap-2">❄️HW空調零件與配套組合管理系統</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
             </span>
@@ -840,45 +840,6 @@
 
             if (error) { resultsContainer.innerHTML = `<p class="text-red-500 text-sm text-center">❌ ${error.message}</p>`; return; }
 
-            const adj = new Map();
-            allData.forEach(item => {
-                const pNum = item.part_number ? item.part_number.trim().toUpperCase() : '';
-                if (!pNum) return;
-                const refs = parseCrossRefCount(item.cross_reference);
-                refs.forEach(ref => {
-                    if (ref) {
-                        if (!adj.has(pNum)) adj.set(pNum, new Set());
-                        if (!adj.has(ref)) adj.set(ref, new Set());
-                        adj.get(pNum).add(ref);
-                        adj.get(ref).add(pNum);
-                    }
-                });
-            });
-
-            const visited = new Set();
-            const partGroupMap = new Map();
-            allData.forEach(item => {
-                const pNum = item.part_number ? item.part_number.trim().toUpperCase() : '';
-                if (!pNum || visited.has(pNum)) return;
-                const group = new Set();
-                const queue = [pNum];
-                visited.add(pNum);
-                while (queue.length > 0) {
-                    const curr = queue.shift();
-                    group.add(curr);
-                    const neighbors = adj.get(curr);
-                    if (neighbors) {
-                        neighbors.forEach(n => {
-                            if (!visited.has(n)) {
-                                visited.add(n);
-                                queue.push(n);
-                            }
-                        });
-                    }
-                }
-                group.forEach(node => partGroupMap.set(node, group));
-            });
-
             const matchedInitialIds = new Set();
             allData.forEach(item => {
                 const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
@@ -889,7 +850,7 @@
                 let matchKeyword = true;
                 if (keyword) {
                     const kw = keyword.toLowerCase();
-                    const fields = [item.part_name, item.part_number, item.oem_number, item.cross_reference, item.kit_parts, item.remarks, item.length, item.width, item.height];
+                    const fields = [item.part_name, item.part_number, item.oem_number, item.cross_reference, item.kit_parts, item.remarks];
                     matchKeyword = fields.some(f => f && String(f).toLowerCase().includes(kw));
                 }
 
@@ -913,27 +874,8 @@
                 }
             });
 
-            const finalAllowedIds = new Set(matchedInitialIds);
-            const partNumToIdMap = new Map();
-            allData.forEach(item => {
-                if (item.part_number) partNumToIdMap.set(item.part_number.trim().toUpperCase(), item.id);
-            });
-
-            matchedInitialIds.forEach(id => {
-                const item = allData.find(p => p.id === id);
-                if (item && item.part_number) {
-                    const pNum = item.part_number.trim().toUpperCase();
-                    const group = partGroupMap.get(pNum);
-                    if (group) {
-                        group.forEach(memberNum => {
-                            const memberId = partNumToIdMap.get(memberNum);
-                            if (memberId) finalAllowedIds.add(memberId);
-                        });
-                    }
-                }
-            });
-
-            const filteredData = allData.filter(item => finalAllowedIds.has(item.id));
+            // 修正：不再將整組 cross_reference 關聯零件全部自動展開為獨立卡片，僅顯示真正符合搜尋條件的項目
+            const filteredData = allData.filter(item => matchedInitialIds.has(item.id));
             renderResults(filteredData, allData);
         }
 
