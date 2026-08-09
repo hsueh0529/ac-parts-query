@@ -160,7 +160,8 @@
 
                     <div class="bg-indigo-50/70 p-3 rounded-lg border border-indigo-200">
                         <label class="block text-xs font-bold text-indigo-900 mb-1">
-                            🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)
+                            🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)[cite: 14]
+                            <span class="font-normal text-[11px] text-indigo-700 block">提示：輸入 A 零件時輸入 B、C 零件，系統將自動雙向無限連動[cite: 14]。</span>
                         </label>
                         <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
                     </div>
@@ -280,7 +281,7 @@
                     </div>
 
                     <div class="bg-indigo-50/70 p-2.5 rounded-lg border border-indigo-200">
-                        <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 交叉料號 (Cross Reference)</label>
+                        <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 交叉料號 (Cross Reference)[cite: 14]</label>
                         <textarea id="edit-cross-ref" rows="2" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
                     </div>
 
@@ -506,7 +507,6 @@
                 return; 
             }
             
-            // 1. 取得車型標頭 (品牌 + 車型 + 年份)
             const sBrand = document.getElementById('search-brand').value.trim();
             const sModel = document.getElementById('search-model').value.trim();
             const sYear = document.getElementById('search-year').value.trim();
@@ -515,7 +515,6 @@
             if (sBrand || sModel || sYear) {
                 vehicleHeader = `${sBrand} ${sModel} ${sYear}`.trim();
             } else {
-                // 若搜尋欄未填，嘗試從第一筆結果的車型關聯帶入
                 const firstItem = currentResultsCache[0];
                 const vehicles = firstItem.part_vehicles ? firstItem.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 if (vehicles.length > 0) {
@@ -529,7 +528,6 @@
                 textLines.push('');
             }
 
-            // 2. 依零件名稱將搜尋結果分組
             const groupedByPartName = {};
             currentResultsCache.forEach(item => {
                 const pName = item.part_name || '未命名零件';
@@ -539,9 +537,6 @@
                 groupedByPartName[pName].push(item);
             });
 
-            // 3. 組合指定格式：
-            // 【零件名】
-            // 品牌 $前價
             Object.keys(groupedByPartName).forEach(pName => {
                 textLines.push(`【${pName}】`);
                 groupedByPartName[pName].forEach(item => {
@@ -549,7 +544,7 @@
                     const priceStr = item.price ? `$${Number(item.price).toLocaleString()}` : '$請洽詢';
                     textLines.push(`${brandName} ${priceStr}`);
                 });
-                textLines.push(''); // 空行區隔
+                textLines.push('');
             });
 
             const copyText = textLines.join('\n').trim();
@@ -714,6 +709,41 @@
             document.getElementById('tab-add-btn').className = tab === 'add' ? 'pb-2 border-b-2 border-blue-600 font-semibold text-blue-600' : 'pb-2 font-semibold text-slate-500';
         }
 
+        // 🔗 跨料號無限雙向連動輔助工具
+        function parseCrossRefCount(str) {
+            if (!str) return [];
+            return str.split(/[,，\s]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
+        }
+
+        async function syncCrossReferences(partNumber, crossRefText) {
+            if (!partNumber) return;
+            const currentPN = partNumber.trim().toUpperCase();
+            const refs = parseCrossRefCount(crossRefText);
+            const allInGroup = [...new Set([currentPN, ...refs])];
+
+            const { data: allParts } = await _supabase.from('parts').select('id, part_number, cross_reference');
+            if (!allParts) return;
+
+            const partMap = new Map();
+            allParts.forEach(p => {
+                if (p.part_number) {
+                    partMap.set(p.part_number.trim().toUpperCase(), p);
+                }
+            });
+
+            for (const pn of allInGroup) {
+                const targetPart = partMap.get(pn);
+                if (targetPart) {
+                    const existingRefs = parseCrossRefCount(targetPart.cross_reference);
+                    const mergedRefs = [...new Set([...existingRefs, ...allInGroup.filter(r => r !== pn)])];
+                    const newCrossRefStr = mergedRefs.join(', ');
+                    if (newCrossRefStr !== (targetPart.cross_reference || '')) {
+                        await _supabase.from('parts').update({ cross_reference: newCrossRefStr }).eq('id', targetPart.id);
+                    }
+                }
+            }
+        }
+
         async function searchParts() {
             const searchVType = document.getElementById('search-vehicle-type').value.trim().toLowerCase();
             const searchBrand = document.getElementById('search-brand').value.trim().toLowerCase();
@@ -726,32 +756,109 @@
             resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行綜合比對...</p>';
             document.getElementById('select-all-checkbox').checked = false;
 
-            let query = _supabase.from('parts').select(`
+            // 取得所有零件以建立圖譜與聯集擴展
+            const { data: allData, error } = await _supabase.from('parts').select(`
                 id, part_name, brand_name, part_number, oem_number, cross_reference, kit_parts, price, price_date, cost, supplier_name, remarks, length, width, height, image_1, image_2, image_3,
                 part_vehicles ( vehicles ( vehicle_type, brand, model, start_year, start_month, end_year, end_month ) )
             `);
 
-            let conditions = [];
-            selectedPartNames.forEach(name => conditions.push(`part_name.ilike.%${name}%`));
-            if (keyword) {
-                ['part_name', 'part_number', 'oem_number', 'cross_reference', 'kit_parts', 'remarks', 'length', 'width', 'height'].forEach(field => conditions.push(`${field}.ilike.%${keyword}%`));
-            }
-            if (conditions.length > 0) query = query.or(conditions.join(','));
-
-            const { data, error } = await query;
             if (error) { resultsContainer.innerHTML = `<p class="text-red-500 text-sm text-center">❌ ${error.message}</p>`; return; }
 
-            const filteredData = data.filter(item => {
-                const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
-                if (!searchVType && !searchBrand && !searchModel && !year) return true;
-                return vehicleList.some(v => {
-                    return (!searchVType || (v.vehicle_type && v.vehicle_type.toLowerCase().includes(searchVType))) &&
-                           (!searchBrand || (v.brand && v.brand.toLowerCase().includes(searchBrand))) &&
-                           (!searchModel || (v.model && v.model.toLowerCase().includes(searchModel))) &&
-                           (!year || (year >= v.start_year && year <= v.end_year));
+            // 1. 建立交叉料號連通圖 (Graph Component Mapping)
+            const adj = new Map();
+            allData.forEach(item => {
+                const pNum = item.part_number ? item.part_number.trim().toUpperCase() : '';
+                if (!pNum) return;
+                const refs = parseCrossRefCount(item.cross_reference);
+                refs.forEach(ref => {
+                    if (ref) {
+                        if (!adj.has(pNum)) adj.set(pNum, new Set());
+                        if (!adj.has(ref)) adj.set(ref, new Set());
+                        adj.get(pNum).add(ref);
+                        adj.get(ref).add(pNum);
+                    }
                 });
             });
 
+            // 計算連通群組
+            const visited = new Set();
+            const partGroupMap = new Map(); // part_number -> Set of connected part_numbers
+            allData.forEach(item => {
+                const pNum = item.part_number ? item.part_number.trim().toUpperCase() : '';
+                if (!pNum || visited.has(pNum)) return;
+                const group = new Set();
+                const queue = [pNum];
+                visited.add(pNum);
+                while (queue.length > 0) {
+                    const curr = queue.shift();
+                    group.add(curr);
+                    const neighbors = adj.get(curr);
+                    if (neighbors) {
+                        neighbors.forEach(n => {
+                            if (!visited.has(n)) {
+                                visited.add(n);
+                                queue.push(n);
+                            }
+                        });
+                    }
+                }
+                group.forEach(node => partGroupMap.set(node, group));
+            });
+
+            // 2. 初步條件篩選符合的零件
+            const matchedInitialIds = new Set();
+            allData.forEach(item => {
+                const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
+                
+                // 檢查零件名稱 Chip 條件
+                const matchName = selectedPartNames.length === 0 || selectedPartNames.some(name => item.part_name && item.part_name.toLowerCase().includes(name.toLowerCase()));
+                
+                // 檢查關鍵字條件
+                let matchKeyword = true;
+                if (keyword) {
+                    const kw = keyword.toLowerCase();
+                    const fields = [item.part_name, item.part_number, item.oem_number, item.cross_reference, item.kit_parts, item.remarks, item.length, item.width, item.height];
+                    matchKeyword = fields.some(f => f && String(f).toLowerCase().includes(kw));
+                }
+
+                // 檢查車型條件
+                let matchVehicle = true;
+                if (searchVType || searchBrand || searchModel || !isNaN(year)) {
+                    matchVehicle = vehicleList.some(v => {
+                        return (!searchVType || (v.vehicle_type && v.vehicle_type.toLowerCase().includes(searchVType))) &&
+                               (!searchBrand || (v.brand && v.brand.toLowerCase().includes(searchBrand))) &&
+                               (!searchModel || (v.model && v.model.toLowerCase().includes(searchModel))) &&
+                               (isNaN(year) || (year >= v.start_year && year <= v.end_year));
+                    });
+                }
+
+                if (matchName && matchKeyword && matchVehicle) {
+                    matchedInitialIds.add(item.id);
+                }
+            });
+
+            // 3. 透過交叉料號連通群組進行無限擴展聯集 (A帶出B, B帶出C...)[cite: 14]
+            const finalAllowedIds = new Set(matchedInitialIds);
+            const partNumToIdMap = new Map();
+            allData.forEach(item => {
+                if (item.part_number) partNumToIdMap.set(item.part_number.trim().toUpperCase(), item.id);
+            });
+
+            matchedInitialIds.forEach(id => {
+                const item = allData.find(p => p.id === id);
+                if (item && item.part_number) {
+                    const pNum = item.part_number.trim().toUpperCase();
+                    const group = partGroupMap.get(pNum);
+                    if (group) {
+                        group.forEach(memberNum => {
+                            const memberId = partNumToIdMap.get(memberNum);
+                            if (memberId) finalAllowedIds.add(memberId);
+                        });
+                    }
+                }
+            });
+
+            const filteredData = allData.filter(item => finalAllowedIds.has(item.id));
             renderResults(filteredData);
         }
 
@@ -797,7 +904,7 @@
                                     </div>` : ''}
                                 ${item.cross_reference ? `
                                     <div class="mt-1.5 pt-1.5 border-t">
-                                        <span class="text-indigo-800 font-bold">🔗 交叉對照料號：</span>
+                                        <span class="text-indigo-800 font-bold">🔗 交叉對照料號：[cite: 14]</span>
                                         <span onclick="jumpToKeywordSearch('${item.cross_reference.trim() || ''}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}</span>
                                     </div>` : ''}
                                 ${item.remarks ? `
@@ -872,15 +979,18 @@
         async function handleSaveEdit(e) {
             e.preventDefault();
             const id = document.getElementById('edit-id').value;
+            const partNum = document.getElementById('edit-part-number').value.trim();
+            const crossRefText = document.getElementById('edit-cross-ref').value.trim();
+
             const updatePayload = {
                 part_name: document.getElementById('edit-part-name').value.trim(),
                 brand_name: document.getElementById('edit-brand-name').value.trim(),
-                part_number: document.getElementById('edit-part-number').value.trim(),
+                part_number: partNum,
                 oem_number: document.getElementById('edit-oem-number').value.trim() || null,
                 length: document.getElementById('edit-length').value.trim() || null,
                 width: document.getElementById('edit-width').value.trim() || null,
                 height: document.getElementById('edit-height').value.trim() || null,
-                cross_reference: document.getElementById('edit-cross-ref').value.trim() || null,
+                cross_reference: crossRefText || null,
                 kit_parts: document.getElementById('edit-kit-parts').value.trim() || null,
                 supplier_name: document.getElementById('edit-supplier-name').value.trim() || null,
                 cost: parseFloat(document.getElementById('edit-cost').value) || null,
@@ -906,6 +1016,10 @@
             }
 
             await _supabase.from('parts').update(updatePayload).eq('id', id);
+            
+            // 執行雙向無限連動同步更新
+            await syncCrossReferences(partNum, crossRefText);
+
             const vehicleIds = await getOrCreateVehicleIds('edit-vehicles-container', 'edit');
             await _supabase.from('part_vehicles').delete().eq('part_id', id);
             if (vehicleIds.length) {
@@ -920,15 +1034,18 @@
 
         async function handleAddPart(e) {
             e.preventDefault();
+            const partNum = document.getElementById('add-part-number').value.trim();
+            const crossRefText = document.getElementById('add-cross-ref').value.trim();
+
             const partPayload = {
                 part_name: document.getElementById('add-part-name').value.trim(),
                 brand_name: document.getElementById('add-brand-name').value.trim(),
-                part_number: document.getElementById('add-part-number').value.trim(),
+                part_number: partNum,
                 oem_number: document.getElementById('add-oem-number').value.trim() || null,
                 length: document.getElementById('add-length').value.trim() || null,
                 width: document.getElementById('add-width').value.trim() || null,
                 height: document.getElementById('add-height').value.trim() || null,
-                cross_reference: document.getElementById('add-cross-ref').value.trim() || null,
+                cross_reference: crossRefText || null,
                 kit_parts: document.getElementById('add-kit-parts').value.trim() || null,
                 supplier_name: document.getElementById('add-supplier-name').value.trim() || null,
                 cost: parseFloat(document.getElementById('add-cost').value) || null,
@@ -942,6 +1059,9 @@
 
             const { data: partData, error } = await _supabase.from('parts').insert([partPayload]).select();
             if (error) { alert('❌ ' + error.message); return; }
+
+            // 執行雙向無限連動同步更新
+            await syncCrossReferences(partNum, crossRefText);
 
             const newPartId = partData[0].id;
             const vehicleIds = await getOrCreateVehicleIds('add-vehicles-container', 'add');
