@@ -48,7 +48,7 @@
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">❄️HW空調零件管理系統</span>
+            <span class="flex items-center gap-2">❄️HW零件管理系統</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
             </span>
@@ -863,6 +863,11 @@
 
                 let q = _supabase.from('vehicles').select('id').eq('brand', brand).eq('model', model).eq('start_year', startYear).eq('end_year', endYear);
                 if (vehicleType) q = q.eq('vehicle_type', vehicleType);
+                if (startMonth) q = q.eq('start_month', startMonth);
+                else q = q.is('start_month', null);
+                if (endMonth) q = q.eq('end_month', endMonth);
+                else q = q.is('end_month', null);
+
                 const { data: existing } = await q.maybeSingle();
 
                 if (existing) {
@@ -1184,12 +1189,16 @@
                         <div class="border-t pt-2 pl-7">
                             <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容底盤與車種 (點擊標籤一鍵跳轉篩選)：</span>
                             <div class="flex flex-wrap gap-1">
-                                ${vehicles.map(v => `
-                                    <span onclick="jumpToVehicleFilter('${v.brand}', '${v.model}', '${v.vehicle_type || ''}')" 
-                                          class="text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2 py-0.5 rounded border cursor-pointer transition flex items-center gap-1">
-                                        <b class="text-blue-800">[${v.vehicle_type || '車種'}]</b> ${v.brand} ${v.model} (${v.start_year}-${v.end_year}) ↗
-                                    </span>
-                                `).join('')}
+                                ${vehicles.map(v => {
+                                    const startStr = v.start_month ? `${v.start_year}/${v.start_month}` : `${v.start_year}`;
+                                    const endStr = v.end_month ? `${v.end_year}/${v.end_month}` : `${v.end_year}`;
+                                    return `
+                                        <span onclick="jumpToVehicleFilter('${v.brand}', '${v.model}', '${v.vehicle_type || ''}')" 
+                                              class="text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2 py-0.5 rounded border cursor-pointer transition flex items-center gap-1">
+                                            <b class="text-blue-800">[${v.vehicle_type || '車種'}]</b> ${v.brand} ${v.model} (${startStr} - ${endStr}) ↗
+                                        </span>
+                                    `;
+                                }).join('')}
                             </div>
                         </div>
                     </div>`;
