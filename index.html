@@ -160,8 +160,8 @@
 
                     <div class="bg-indigo-50/70 p-3 rounded-lg border border-indigo-200">
                         <label class="block text-xs font-bold text-indigo-900 mb-1">
-                            🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)[cite: 14]
-                            <span class="font-normal text-[11px] text-indigo-700 block">提示：輸入 A 零件時輸入 B、C 零件，系統將自動雙向無限連動[cite: 14]。</span>
+                            🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)
+                            <span class="font-normal text-[11px] text-indigo-700 block">提示：輸入 A 零件時輸入 B、C 零件，系統將自動雙向無限連動。</span>
                         </label>
                         <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
                     </div>
@@ -169,9 +169,9 @@
                     <div class="bg-amber-50/80 p-3 rounded-lg border border-amber-200">
                         <label class="block text-xs font-bold text-amber-900 mb-1">
                             🔧 建議搭配配套零組件 (Kit / Companion Parts)
-                            <span class="font-normal text-[11px] text-amber-700 block">提示：將各配套料號用中括號包覆（例如：膨脹閥 [V-101]、O環組 [OR-002]），系統將自動生成獨立點擊按鈕！</span>
+                            <span class="font-normal text-[11px] text-amber-700 block">提示：將各配套料號用中括號包覆（例如：膨脹閥 [V-101]、墊片 [GASKET-01]），系統將自動雙向對應並生成獨立按鈕！</span>
                         </label>
-                        <textarea id="add-kit-parts" rows="2" placeholder="格式範例: 膨脹閥 [V-101], O環組 [OR-002], 固定螺絲 [SCR-8]" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
+                        <textarea id="add-kit-parts" rows="2" placeholder="格式範例: 膨脹閥 [V-101], 墊片 [GASKET-01]" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -281,13 +281,13 @@
                     </div>
 
                     <div class="bg-indigo-50/70 p-2.5 rounded-lg border border-indigo-200">
-                        <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 交叉料號 (Cross Reference)[cite: 14]</label>
+                        <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 交叉料號 (Cross Reference)</label>
                         <textarea id="edit-cross-ref" rows="2" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
                     </div>
 
                     <div class="bg-amber-50/80 p-2.5 rounded-lg border border-amber-200">
                         <label class="block text-xs font-bold text-amber-900 mb-1">🔧 建議搭配配套零組件 (Kit / Companion Parts)</label>
-                        <textarea id="edit-kit-parts" rows="2" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white" placeholder="例: 膨脹閥 [V-101], O環 [OR-002]"></textarea>
+                        <textarea id="edit-kit-parts" rows="2" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white" placeholder="例: 膨脹閥 [V-101], 墊片 [GASKET-01]"></textarea>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
@@ -451,13 +451,66 @@
             searchParts();
         }
 
-        function renderKitPartsWithLinks(kitPartsText) {
-            if (!kitPartsText) return '<span class="text-slate-400 text-[11px]">尚未設定配套零件</span>';
-            let formattedHtml = kitPartsText.replace(/\[(.*?)\]/g, (match, partNumber) => {
-                const cleanNum = partNumber.trim();
-                return `<button onclick="jumpToKeywordSearch('${cleanNum}')" class="font-mono text-xs bg-white text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-300 hover:bg-blue-600 hover:text-white transition shadow-sm mx-0.5 inline-flex items-center gap-0.5">🔍 ${cleanNum}</button>`;
+        // 解析配套中括號並與資料庫進行「雙向關聯反查」顯示完整卡片資訊（圖片、前價等）
+        function renderAssociatedKitCards(kitPartsText, allPartsList) {
+            if (!kitPartsText) return '<span class="text-slate-400 text-[11px]">尚未設定搭配配套零件</span>';
+            
+            // 抓出所有中括號內的料號
+            const matches = kitPartsText.match(/\[(.*?)\]/g);
+            if (!matches || matches.length === 0) {
+                // 若沒用中括號，維持原本純文字按鈕
+                let formattedHtml = kitPartsText.replace(/\[(.*?)\]/g, (match, partNumber) => {
+                    const cleanNum = partNumber.trim();
+                    return `<button onclick="jumpToKeywordSearch('${cleanNum}')" class="font-mono text-xs bg-white text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-300 hover:bg-blue-600 hover:text-white transition shadow-sm mx-0.5 inline-flex items-center gap-0.5">🔍 ${cleanNum}</button>`;
+                });
+                return `<div class="text-[11px] leading-relaxed">${formattedHtml}</div>`;
+            }
+
+            const partMap = new Map();
+            allPartsList.forEach(p => {
+                if (p.part_number) partMap.set(p.part_number.trim().toUpperCase(), p);
             });
-            return `<div class="text-[11px] leading-relaxed">${formattedHtml}</div>`;
+
+            let cardsHtml = '<div class="space-y-2 mt-2">';
+            matches.forEach(m => {
+                const cleanNum = m.replace(/[\[\]]/g, '').trim().toUpperCase();
+                const matchedPart = partMap.get(cleanNum);
+
+                if (matchedPart) {
+                    const img = matchedPart.image_1 || matchedPart.image_2 || matchedPart.image_3;
+                    const priceStr = matchedPart.price ? `NT$ ${Number(matchedPart.price).toLocaleString()}` : '未報價';
+                    cardsHtml += `
+                        <div class="bg-white p-2 rounded-lg border border-amber-200 flex items-center justify-between gap-2 shadow-xs">
+                            <div class="flex items-center gap-2">
+                                ${img ? `<img src="${img}" class="w-10 h-10 object-cover rounded border cursor-pointer" onclick="window.open('${img}', '_blank')" title="點擊放大">` : '<div class="w-10 h-10 bg-slate-100 rounded border flex items-center justify-center text-[10px] text-slate-400">無圖</div>'}
+                                <div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">${matchedPart.brand_name || '通用'}</span>
+                                        <span class="text-xs font-bold text-slate-800">${matchedPart.part_name}</span>
+                                    </div>
+                                    <span class="font-mono text-xs font-bold text-blue-900 bg-slate-50 px-1 rounded border">${matchedPart.part_number}</span>
+                                </div>
+                            </div>
+                            <div class="text-right flex items-center gap-2">
+                                <div>
+                                    <span class="text-xs font-extrabold text-emerald-600 block">${priceStr}</span>
+                                    ${matchedPart.price_date ? `<span class="text-[10px] text-slate-400 block">${matchedPart.price_date}</span>` : ''}
+                                </div>
+                                <button onclick="jumpToKeywordSearch('${matchedPart.part_number}')" class="text-[11px] bg-amber-600 hover:bg-amber-700 text-white font-medium px-2 py-1 rounded transition shadow-xs">🔍 查看</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    cardsHtml += `
+                        <div class="bg-white p-2 rounded-lg border border-amber-200 flex items-center justify-between gap-2">
+                            <span class="text-xs text-slate-600 font-mono">配套料號: <b>${cleanNum}</b> (尚未建立主檔)</span>
+                            <button onclick="jumpToKeywordSearch('${cleanNum}')" class="text-[11px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded">🔍 搜尋</button>
+                        </div>
+                    `;
+                }
+            });
+            cardsHtml += '</div>';
+            return cardsHtml;
         }
 
         async function deletePartById(id, partName) {
@@ -500,7 +553,7 @@
             }
         }
 
-        // 🚀 複製報價與前價清單（指定格式：品牌+車型+年份，零件名底下條列各品牌與前價）
+        // 🚀 複製報價與前價清單（指定格式）
         async function copyQuote() {
             if (!currentResultsCache || currentResultsCache.length === 0) { 
                 alert('⚠️ 無查詢結果可複製！'); 
@@ -756,7 +809,6 @@
             resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行綜合比對...</p>';
             document.getElementById('select-all-checkbox').checked = false;
 
-            // 取得所有零件以建立圖譜與聯集擴展
             const { data: allData, error } = await _supabase.from('parts').select(`
                 id, part_name, brand_name, part_number, oem_number, cross_reference, kit_parts, price, price_date, cost, supplier_name, remarks, length, width, height, image_1, image_2, image_3,
                 part_vehicles ( vehicles ( vehicle_type, brand, model, start_year, start_month, end_year, end_month ) )
@@ -764,7 +816,7 @@
 
             if (error) { resultsContainer.innerHTML = `<p class="text-red-500 text-sm text-center">❌ ${error.message}</p>`; return; }
 
-            // 1. 建立交叉料號連通圖 (Graph Component Mapping)
+            // 1. 建立交叉料號連通圖
             const adj = new Map();
             allData.forEach(item => {
                 const pNum = item.part_number ? item.part_number.trim().toUpperCase() : '';
@@ -780,9 +832,8 @@
                 });
             });
 
-            // 計算連通群組
             const visited = new Set();
-            const partGroupMap = new Map(); // part_number -> Set of connected part_numbers
+            const partGroupMap = new Map();
             allData.forEach(item => {
                 const pNum = item.part_number ? item.part_number.trim().toUpperCase() : '';
                 if (!pNum || visited.has(pNum)) return;
@@ -805,15 +856,14 @@
                 group.forEach(node => partGroupMap.set(node, group));
             });
 
-            // 2. 初步條件篩選符合的零件
+            // 2. 初步條件篩選符合的零件（包含「被動對應」：若墊片在其 kit_parts 填了此膨脹閥，膨脹閥也會被帶出來）
             const matchedInitialIds = new Set();
             allData.forEach(item => {
                 const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
+                const pNumUpper = item.part_number ? item.part_number.trim().toUpperCase() : '';
                 
-                // 檢查零件名稱 Chip 條件
                 const matchName = selectedPartNames.length === 0 || selectedPartNames.some(name => item.part_name && item.part_name.toLowerCase().includes(name.toLowerCase()));
                 
-                // 檢查關鍵字條件
                 let matchKeyword = true;
                 if (keyword) {
                     const kw = keyword.toLowerCase();
@@ -821,7 +871,6 @@
                     matchKeyword = fields.some(f => f && String(f).toLowerCase().includes(kw));
                 }
 
-                // 檢查車型條件
                 let matchVehicle = true;
                 if (searchVType || searchBrand || searchModel || !isNaN(year)) {
                     matchVehicle = vehicleList.some(v => {
@@ -832,12 +881,18 @@
                     });
                 }
 
-                if (matchName && matchKeyword && matchVehicle) {
+                // 智慧被動檢核：如果其他零件的配套 (kit_parts) 寫了這個料號，也算符合
+                let matchAsKitPart = false;
+                if (pNumUpper && keyword) {
+                    matchAsKitPart = allData.some(other => other.kit_parts && other.kit_parts.toUpperCase().includes(pNumUpper));
+                }
+
+                if ((matchName && matchKeyword && matchVehicle) || matchAsKitPart) {
                     matchedInitialIds.add(item.id);
                 }
             });
 
-            // 3. 透過交叉料號連通群組進行無限擴展聯集 (A帶出B, B帶出C...)[cite: 14]
+            // 3. 透過交叉料號連通群組進行無限擴展聯集
             const finalAllowedIds = new Set(matchedInitialIds);
             const partNumToIdMap = new Map();
             allData.forEach(item => {
@@ -859,10 +914,10 @@
             });
 
             const filteredData = allData.filter(item => finalAllowedIds.has(item.id));
-            renderResults(filteredData);
+            renderResults(filteredData, allData);
         }
 
-        function renderResults(list) {
+        function renderResults(list, allData) {
             currentResultsCache = list;
             const resultsContainer = document.getElementById('results');
             if (list.length === 0) { resultsContainer.innerHTML = `<p class="text-amber-600 text-sm text-center py-6 bg-amber-50 rounded-xl">查無符合條件的零件。</p>`; return; }
@@ -870,6 +925,14 @@
             const cards = list.map(item => {
                 const vehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
+                const currentPN = item.part_number ? item.part_number.trim().toUpperCase() : '';
+
+                // 反向找出有哪些其他零件的 kit_parts 把當前零件料號包進去了（例如墊片填了膨脹閥料號）
+                const reverseLinkedParts = allData.filter(p => {
+                    if (p.id === item.id || !p.kit_parts) return false;
+                    const kitText = p.kit_parts.toUpperCase();
+                    return kitText.includes(`[${currentPN}]`) || kitText.includes(currentPN);
+                });
 
                 return `
                     <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition space-y-3 relative">
@@ -904,7 +967,7 @@
                                     </div>` : ''}
                                 ${item.cross_reference ? `
                                     <div class="mt-1.5 pt-1.5 border-t">
-                                        <span class="text-indigo-800 font-bold">🔗 交叉對照料號：[cite: 14]</span>
+                                        <span class="text-indigo-800 font-bold">🔗 交叉對照料號：</span>
                                         <span onclick="jumpToKeywordSearch('${item.cross_reference.trim() || ''}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}</span>
                                     </div>` : ''}
                                 ${item.remarks ? `
@@ -913,9 +976,38 @@
                                     </div>` : ''}
                             </div>
 
-                            <div class="bg-amber-50/70 p-2.5 rounded-lg border border-amber-200">
-                                <span class="text-amber-900 font-bold block mb-1">🔧 建議搭配配套零組件 (點擊各料號按鈕一鍵查詢)：</span>
-                                ${renderKitPartsWithLinks(item.kit_parts)}
+                            <div class="bg-amber-50/70 p-2.5 rounded-lg border border-amber-200 space-y-2">
+                                <div>
+                                    <span class="text-amber-900 font-bold block mb-1">🔧 建議搭配配套零組件：</span>
+                                    ${renderAssociatedKitCards(item.kit_parts, allData)}
+                                </div>
+
+                                ${reverseLinkedParts.length > 0 ? `
+                                    <div class="border-t border-amber-200 pt-2">
+                                        <span class="text-amber-900 font-bold block mb-1">🔗 須對應此零件的品項 (自動對應)：</span>
+                                        <div class="space-y-1.5">
+                                            ${reverseLinkedParts.map(rp => {
+                                                const rpImg = rp.image_1 || rp.image_2 || rp.image_3;
+                                                const rpPrice = rp.price ? `NT$ ${Number(rp.price).toLocaleString()}` : '未報價';
+                                                return `
+                                                    <div class="bg-white p-2 rounded border border-amber-300 flex items-center justify-between gap-2 shadow-xs">
+                                                        <div class="flex items-center gap-2">
+                                                            ${rpImg ? `<img src="${rpImg}" class="w-8 h-8 object-cover rounded border cursor-pointer" onclick="window.open('${rpImg}', '_blank')">` : ''}
+                                                            <div>
+                                                                <div class="text-[11px] font-bold text-slate-800">${rp.part_name} <span class="font-mono text-blue-800">[${rp.part_number}]</span></div>
+                                                                <span class="text-[10px] text-slate-500">${rp.brand_name || ''}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <span class="text-[11px] font-extrabold text-emerald-600 block">${rpPrice}</span>
+                                                            <button onclick="jumpToKeywordSearch('${rp.part_number}')" class="text-[10px] bg-amber-600 text-white px-1.5 py-0.5 rounded">查看</button>
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            }).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
 
@@ -1016,8 +1108,6 @@
             }
 
             await _supabase.from('parts').update(updatePayload).eq('id', id);
-            
-            // 執行雙向無限連動同步更新
             await syncCrossReferences(partNum, crossRefText);
 
             const vehicleIds = await getOrCreateVehicleIds('edit-vehicles-container', 'edit');
@@ -1060,7 +1150,6 @@
             const { data: partData, error } = await _supabase.from('parts').insert([partPayload]).select();
             if (error) { alert('❌ ' + error.message); return; }
 
-            // 執行雙向無限連動同步更新
             await syncCrossReferences(partNum, crossRefText);
 
             const newPartId = partData[0].id;
