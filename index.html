@@ -20,19 +20,19 @@
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">❄️ 汽車/農機空調零件與配套組合管理系統</span>
+            <span class="flex items-center gap-2">❄️ 汽車/農機空調零件與配套組合管理系統[cite: 13]</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中[cite: 13]
             </span>
         </h1>
 
         <!-- 功能頁籤切換按鈕 -->
         <div class="flex gap-4 border-b mb-6">
             <button id="tab-search-btn" onclick="switchTab('search')" class="pb-2 border-b-2 border-blue-600 font-semibold text-blue-600 transition">
-                🔍 零件與配套組合查詢
+                🔍 零件與配套組合查詢[cite: 13]
             </button>
             <button id="tab-add-btn" onclick="switchTab('add')" class="pb-2 font-semibold text-slate-500 hover:text-slate-800 transition">
-                ➕ 建立新零件與配套關聯
+                ➕ 建立新零件與配套關聯[cite: 13]
             </button>
         </div>
 
@@ -42,39 +42,39 @@
             <!-- 複合搜尋條件 (雙向連動綁定) -->
             <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別[cite: 13]</label>
                     <input type="text" id="search-vehicle-type" list="vehicle-type-list" placeholder="手動輸入或選擇..." oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌[cite: 13]</label>
                     <input type="text" id="search-brand" list="brand-list" placeholder="選擇或輸入品牌..." oninput="handleBrandChange(); triggerTwoWaySync();" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">底盤號 / 車型</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">底盤號 / 車型[cite: 13]</label>
                     <input type="text" id="search-model" list="model-list" placeholder="例: W246 / E36" oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">年份 (出廠/適用)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">年份 (出廠/適用)[cite: 13]</label>
                     <input type="number" id="search-year" placeholder="例: 2015" oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
 
                 <!-- 零件名稱點擊複選區域 (雙向連動 Chips) -->
                 <div class="md:col-span-2">
                     <div class="flex justify-between items-center mb-1">
-                        <label class="block text-xs font-semibold text-slate-600">📦 零件名稱 (點擊複選篩選)</label>
+                        <label class="block text-xs font-semibold text-slate-600">📦 零件名稱 (點擊複選篩選)[cite: 13]</label>
                         <button type="button" onclick="clearSelectedParts()" class="text-[11px] text-blue-600 hover:underline">清除選取</button>
                     </div>
                     <div id="part-chips-container" class="flex flex-wrap gap-1.5 p-2 bg-white border border-slate-200 rounded-lg min-h-[4.5rem] max-h-24 overflow-y-auto">
-                        <span class="text-xs text-slate-400">載入歷史零件中...</span>
+                        <span class="text-xs text-slate-400">載入歷史零件中...[cite: 13]</span>
                     </div>
                 </div>
 
                 <!-- 料號與關聯對照關鍵字 -->
                 <div class="md:col-span-6 border-t pt-2 mt-1">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">🔍 本廠 / OEM / 交叉料號 / 配套零件關鍵字搜尋</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">🔍 本廠 / OEM / 交叉料號 / 配套零件關鍵字搜尋[cite: 13]</label>
                     <input type="text" id="search-keyword" placeholder="輸入料號例: DCP05001 / 膨脹閥 / O環 (按 Enter 可直接查詢)" onkeydown="if(event.key==='Enter') searchParts()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
             </div>
@@ -82,13 +82,13 @@
             <!-- 操作按鈕區 -->
             <div class="flex flex-col md:flex-row gap-3 mb-4">
                 <button onclick="searchParts()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1">
-                    🔍 執行綜合查詢
+                    🔍 執行綜合查詢[cite: 13]
                 </button>
                 <button onclick="copyQuote()" class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium px-5 py-2.5 rounded-lg shadow transition flex items-center justify-center gap-1 whitespace-nowrap">
-                    📋 複製報價與前價清單 (指定格式)
+                    📋 複製報價與前價清單 (指定格式)[cite: 13]
                 </button>
                 <button onclick="clearSearchInputs()" class="bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 font-medium px-5 py-2.5 rounded-lg shadow-sm transition">
-                    🧹 清除條件
+                    🧹 清除條件[cite: 13]
                 </button>
             </div>
 
@@ -96,16 +96,16 @@
             <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl border border-slate-200 mb-4">
                 <div class="flex items-center gap-2">
                     <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded text-blue-600 cursor-pointer">
-                    <label for="select-all-checkbox" class="text-xs font-bold text-slate-700 cursor-pointer">全選目前頁面項目</label>
+                    <label for="select-all-checkbox" class="text-xs font-bold text-slate-700 cursor-pointer">全選目前頁面項目[cite: 13]</label>
                 </div>
                 <button onclick="batchDeleteParts()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
-                    🗑️ 批次刪除選取項目
+                    🗑️ 批次刪除選取項目[cite: 13]
                 </button>
             </div>
 
             <!-- 結果顯示專區 -->
             <div id="results" class="space-y-4">
-                <p class="text-slate-400 text-sm text-center py-6">請選擇查詢條件進行查詢。</p>
+                <p class="text-slate-400 text-sm text-center py-6">請選擇查詢條件進行查詢。[cite: 13]</p>
             </div>
         </div>
 
@@ -114,45 +114,45 @@
             <form id="add-part-form" onsubmit="handleAddPart(event)" class="space-y-4 max-w-3xl mx-auto">
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <h2 class="font-bold text-sm text-slate-700 border-b pb-2 flex items-center gap-1">
-                        📦 基本零件主檔與品牌
+                        📦 基本零件主檔與品牌[cite: 13]
                     </h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *[cite: 13]</label>
                             <input type="text" id="add-part-name" list="part-name-list" required placeholder="可自由輸入 (例: 風箱 / 壓縮機)" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">零件品牌/製造商 *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">零件品牌/製造商 *[cite: 13]</label>
                             <input type="text" id="add-brand-name" list="part-brand-list" required placeholder="可自由輸入 (例: 正廠 / Denso)" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">本廠/主要零件料號 *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">本廠/主要零件料號 *[cite: 13]</label>
                             <input type="text" id="add-part-number" required placeholder="例如: DCP05001" class="w-full border rounded-lg p-2 text-sm font-mono font-bold text-blue-900">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">原廠 OEM 料號 (選填)</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">原廠 OEM 料號 (選填)[cite: 13]</label>
                             <input type="text" id="add-oem-number" placeholder="例如: 64528385915" class="w-full border rounded-lg p-2 text-sm font-mono">
                         </div>
                     </div>
 
                     <!-- 長寬高尺寸欄位 -->
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-700 mb-2">📏 尺寸規格 (選填)</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">📏 尺寸規格 (選填)[cite: 13]</label>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">長度</label>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">長度[cite: 13]</label>
                                 <input type="text" id="add-length" placeholder="例: 250mm" class="w-full border rounded-lg p-2 text-sm">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">寬度</label>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">寬度[cite: 13]</label>
                                 <input type="text" id="add-width" placeholder="例: 150mm" class="w-full border rounded-lg p-2 text-sm">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">高度</label>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">高度[cite: 13]</label>
                                 <input type="text" id="add-height" placeholder="例: 80mm" class="w-full border rounded-lg p-2 text-sm">
                             </div>
                         </div>
@@ -160,51 +160,51 @@
 
                     <div class="bg-indigo-50/70 p-3 rounded-lg border border-indigo-200">
                         <label class="block text-xs font-bold text-indigo-900 mb-1">
-                            🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)
-                            <span class="font-normal text-[11px] text-indigo-700 block">提示：輸入 A 零件時輸入 B、C 零件，系統將自動雙向無限連動。</span>
+                            🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)[cite: 13]
+                            <span class="font-normal text-[11px] text-indigo-700 block">提示：可輸入多筆（如 A, B, C），系統將自動雙向無限連動。[cite: 13]</span>
                         </label>
                         <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
                     </div>
 
                     <div class="bg-amber-50/80 p-3 rounded-lg border border-amber-200">
                         <label class="block text-xs font-bold text-amber-900 mb-1">
-                            🔧 建議搭配配套零組件 (Kit / Companion Parts)
-                            <span class="font-normal text-[11px] text-amber-700 block">提示：將各配套料號用中括號包覆（例如：膨脹閥 [V-101]、墊片 [GASKET-01]），系統將自動雙向對應並生成獨立按鈕！</span>
+                            🔧 建議搭配配套零組件 (Kit / Companion Parts)[cite: 13]
+                            <span class="font-normal text-[11px] text-amber-700 block">提示：將各配套料號用中括號包覆（例如：膨脹閥 [V-101]、墊片 [GASKET-01]），系統將自動雙向對應並生成獨立按鈕！[cite: 13]</span>
                         </label>
                         <textarea id="add-kit-parts" rows="2" placeholder="格式範例: 膨脹閥 [V-101], 墊片 [GASKET-01]" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商/盤商 (選填)</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商/盤商 (選填)[cite: 13]</label>
                             <input type="text" id="add-supplier-name" list="supplier-list" placeholder="例如: 台灣電綜 / 永晟" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">備註/規格說明</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">備註/規格說明[cite: 13]</label>
                             <input type="text" id="add-remarks" placeholder="例如: R134a, 帶線圈, 24V" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                     </div>
 
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-700 mb-2">💵 價格與成本紀錄</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">💵 價格與成本紀錄[cite: 13]</label>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">進貨成本 (NT$)</label>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">進貨成本 (NT$)[cite: 13]</label>
                                 <input type="number" id="add-cost" placeholder="4500" class="w-full border rounded-lg p-2 text-sm">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">參考前價 (NT$)</label>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">參考前價 (NT$)[cite: 13]</label>
                                 <input type="number" id="add-price" placeholder="6800" class="w-full border rounded-lg p-2 text-sm">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">前價日期</label>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">前價日期[cite: 13]</label>
                                 <input type="date" id="add-price-date" class="w-full border rounded-lg p-2 text-sm">
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">零件照片 (最多 3 張)</label>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">零件照片 (最多 3 張)[cite: 13]</label>
                         <input type="file" id="add-images" accept="image/*" multiple onchange="previewImages(event, 'add-preview-container')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                         <div id="add-preview-container" class="flex gap-2 mt-3 overflow-x-auto"></div>
                     </div>
@@ -212,16 +212,16 @@
 
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <div class="flex justify-between items-center border-b pb-2">
-                        <h2 class="font-bold text-sm text-slate-700">🚘 適用車型與車種類別</h2>
+                        <h2 class="font-bold text-sm text-slate-700">🚘 適用車型與車種類別[cite: 13]</h2>
                         <button type="button" onclick="addVehicleRow('add-vehicles-container', 'add')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-lg border border-blue-200 transition">
-                            ➕ 新增一台車型
+                            ➕ 新增一台車型[cite: 13]
                         </button>
                     </div>
                     <div id="add-vehicles-container" class="space-y-3"></div>
                 </div>
 
                 <button type="submit" id="submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition">
-                    💾 儲存零件與配套組合
+                    💾 儲存零件與配套組合[cite: 13]
                 </button>
             </form>
         </div>
@@ -232,7 +232,7 @@
     <div id="edit-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="text-base font-bold text-slate-800">✏️ 編輯零件與配套組合</h3>
+                <h3 class="text-base font-bold text-slate-800">✏️ 編輯零件與配套組合[cite: 13]</h3>
                 <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold px-2">&times;</button>
             </div>
             
@@ -241,79 +241,79 @@
                 <div class="space-y-3">
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *[cite: 13]</label>
                             <input type="text" id="edit-part-name" list="part-name-list" required class="w-full border rounded-lg p-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">品牌 *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">品牌 *[cite: 13]</label>
                             <input type="text" id="edit-brand-name" list="part-brand-list" required class="w-full border rounded-lg p-2 text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">本廠料號 *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">本廠料號 *[cite: 13]</label>
                             <input type="text" id="edit-part-number" required class="w-full border rounded-lg p-2 text-sm font-mono font-bold">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">原廠 OEM 料號</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">原廠 OEM 料號[cite: 13]</label>
                             <input type="text" id="edit-oem-number" class="w-full border rounded-lg p-2 text-sm font-mono">
                         </div>
                     </div>
 
                     <!-- 編輯區長寬高尺寸 -->
                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">📏 尺寸規格</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">📏 尺寸規格[cite: 13]</label>
                         <div class="grid grid-cols-3 gap-2">
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">長度</label>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">長度[cite: 13]</label>
                                 <input type="text" id="edit-length" class="w-full border rounded-lg p-1.5 text-sm">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">寬度</label>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">寬度[cite: 13]</label>
                                 <input type="text" id="edit-width" class="w-full border rounded-lg p-1.5 text-sm">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">高度</label>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">高度[cite: 13]</label>
                                 <input type="text" id="edit-height" class="w-full border rounded-lg p-1.5 text-sm">
                             </div>
                         </div>
                     </div>
 
                     <div class="bg-indigo-50/70 p-2.5 rounded-lg border border-indigo-200">
-                        <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 交叉料號 (Cross Reference)</label>
+                        <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 交叉料號 (Cross Reference)[cite: 13]</label>
                         <textarea id="edit-cross-ref" rows="2" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
                     </div>
 
                     <div class="bg-amber-50/80 p-2.5 rounded-lg border border-amber-200">
-                        <label class="block text-xs font-bold text-amber-900 mb-1">🔧 建議搭配配套零組件 (Kit / Companion Parts)</label>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">🔧 建議搭配配套零組件 (Kit / Companion Parts)[cite: 13]</label>
                         <textarea id="edit-kit-parts" rows="2" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white" placeholder="例: 膨脹閥 [V-101], 墊片 [GASKET-01]"></textarea>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商[cite: 13]</label>
                             <input type="text" id="edit-supplier-name" list="supplier-list" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">備註說明</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">備註說明[cite: 13]</label>
                             <input type="text" id="edit-remarks" class="w-full border rounded-lg p-2 text-sm">
                         </div>
                     </div>
 
                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
-                        <label class="block text-xs font-bold text-slate-700">💵 價格與成本</label>
+                        <label class="block text-xs font-bold text-slate-700">💵 價格與成本[cite: 13]</label>
                         <div class="grid grid-cols-3 gap-2">
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">進貨成本</label>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">進貨成本[cite: 13]</label>
                                 <input type="number" id="edit-cost" class="w-full border rounded-lg p-1.5 text-sm">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">參考前價</label>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">參考前價[cite: 13]</label>
                                 <input type="number" id="edit-price" class="w-full border rounded-lg p-1.5 text-sm">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">前價日期</label>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">前價日期[cite: 13]</label>
                                 <input type="date" id="edit-price-date" class="w-full border rounded-lg p-1.5 text-sm">
                             </div>
                         </div>
@@ -321,7 +321,7 @@
 
                     <!-- 編輯區照片更新與刪除 -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">管理零件照片 (可點擊圖片放大，或點右上角刪除現有照片；或上傳新照片)</label>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">管理零件照片 (可點擊圖片放大，或點右上角刪除現有照片；或上傳新照片)[cite: 13]</label>
                         <div id="edit-preview-container" class="flex gap-2 mb-3 overflow-x-auto items-center"></div>
                         <input type="file" id="edit-images" accept="image/*" multiple onchange="previewNewEditImages(event)" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                     </div>
@@ -329,17 +329,17 @@
 
                 <div class="space-y-3 border-t pt-3">
                     <div class="flex justify-between items-center">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">🚘 適用車型與底盤號</h4>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">🚘 適用車型與底盤號[cite: 13]</h4>
                         <button type="button" onclick="addVehicleRow('edit-vehicles-container', 'edit')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-2.5 py-1 rounded border border-blue-200 transition">
-                            ➕ 新增車型
+                            ➕ 新增車型[cite: 13]
                         </button>
                     </div>
                     <div id="edit-vehicles-container" class="space-y-3"></div>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-3 border-t">
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">取消</button>
-                    <button type="submit" id="edit-submit-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow">💾 儲存修改</button>
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">取消[cite: 13]</button>
+                    <button type="submit" id="edit-submit-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow">💾 儲存修改[cite: 13]</button>
                 </div>
             </form>
         </div>
@@ -404,7 +404,7 @@
             if (!container) return;
 
             if (allPartNamesCache.length === 0) {
-                container.innerHTML = `<span class="text-xs text-slate-400">目前尚無零件歷史資料</span>`;
+                container.innerHTML = `<span class="text-xs text-slate-400">目前尚無零件歷史資料</span>[cite: 13]`;
                 return;
             }
 
@@ -417,7 +417,7 @@
                 return `
                     <button type="button" onclick="togglePartSelection('${name}')" 
                             class="px-2.5 py-1 rounded-lg text-xs border transition flex items-center gap-1 ${btnClass}">
-                        ${isSelected ? '✓ ' : ''}${name}
+                        ${isSelected ? '✓ ' : ''}${name}[cite: 13]
                     </button>
                 `;
             }).join('');
@@ -453,12 +453,10 @@
 
         // 解析配套中括號並與資料庫進行「雙向關聯反查」顯示完整卡片資訊（圖片、前價等）
         function renderAssociatedKitCards(kitPartsText, allPartsList) {
-            if (!kitPartsText) return '<span class="text-slate-400 text-[11px]">尚未設定搭配配套零件</span>';
+            if (!kitPartsText) return '<span class="text-slate-400 text-[11px]">尚未設定搭配配套零件</span>[cite: 13]';
             
-            // 抓出所有中括號內的料號
             const matches = kitPartsText.match(/\[(.*?)\]/g);
             if (!matches || matches.length === 0) {
-                // 若沒用中括號，維持原本純文字按鈕
                 let formattedHtml = kitPartsText.replace(/\[(.*?)\]/g, (match, partNumber) => {
                     const cleanNum = partNumber.trim();
                     return `<button onclick="jumpToKeywordSearch('${cleanNum}')" class="font-mono text-xs bg-white text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-300 hover:bg-blue-600 hover:text-white transition shadow-sm mx-0.5 inline-flex items-center gap-0.5">🔍 ${cleanNum}</button>`;
@@ -482,7 +480,7 @@
                     cardsHtml += `
                         <div class="bg-white p-2 rounded-lg border border-amber-200 flex items-center justify-between gap-2 shadow-xs">
                             <div class="flex items-center gap-2">
-                                ${img ? `<img src="${img}" class="w-10 h-10 object-cover rounded border cursor-pointer" onclick="window.open('${img}', '_blank')" title="點擊放大">` : '<div class="w-10 h-10 bg-slate-100 rounded border flex items-center justify-center text-[10px] text-slate-400">無圖</div>'}
+                                ${img ? `<img src="${img}" class="w-10 h-10 object-cover rounded border cursor-pointer" onclick="window.open('${img}', '_blank')" title="點擊放大">` : '<div class="w-10 h-10 bg-slate-100 rounded border flex items-center justify-center text-[10px] text-slate-400">無圖</div>[cite: 13]'}
                                 <div>
                                     <div class="flex items-center gap-1">
                                         <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">${matchedPart.brand_name || '通用'}</span>
@@ -503,8 +501,8 @@
                 } else {
                     cardsHtml += `
                         <div class="bg-white p-2 rounded-lg border border-amber-200 flex items-center justify-between gap-2">
-                            <span class="text-xs text-slate-600 font-mono">配套料號: <b>${cleanNum}</b> (尚未建立主檔)</span>
-                            <button onclick="jumpToKeywordSearch('${cleanNum}')" class="text-[11px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded">🔍 搜尋</button>
+                            <span class="text-xs text-slate-600 font-mono">配套料號: <b>${cleanNum}</b> (尚未建立主檔)[cite: 13]</span>
+                            <button onclick="jumpToKeywordSearch('${cleanNum}')" class="text-[11px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded">🔍 搜尋[cite: 13]</button>
                         </div>
                     `;
                 }
@@ -553,7 +551,6 @@
             }
         }
 
-        // 🚀 複製報價與前價清單（指定格式）
         async function copyQuote() {
             if (!currentResultsCache || currentResultsCache.length === 0) { 
                 alert('⚠️ 無查詢結果可複製！'); 
@@ -623,24 +620,24 @@
             document.getElementById('search-year').value = '';
             document.getElementById('search-keyword').value = '';
             clearSelectedParts();
-            document.getElementById('results').innerHTML = '<p class="text-slate-400 text-sm text-center py-6">請選擇條件。</p>';
+            document.getElementById('results').innerHTML = '<p class="text-slate-400 text-sm text-center py-6">請選擇條件。</p>[cite: 13]';
             currentResultsCache = [];
         }
 
         function createVehicleRowHTML(prefix, v = {}) {
             return `
                 <div class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
-                    <button type="button" onclick="removeVehicleRow(this)" class="absolute top-2 right-2 text-red-500 text-xs font-bold px-2 py-1">🗑️ 刪除</button>
+                    <button type="button" onclick="removeVehicleRow(this)" class="absolute top-2 right-2 text-red-500 text-xs font-bold px-2 py-1">🗑️ 刪除[cite: 13]</button>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-12">
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *</label><input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm" list="vehicle-type-list" required value="${v.vehicle_type || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *</label><input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm" list="brand-list" required value="${v.brand || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">底盤 / 車型 *</label><input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm" list="model-list" required value="${v.model || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *[cite: 13]</label><input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm" list="vehicle-type-list" required value="${v.vehicle_type || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *[cite: 13]</label><input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm" list="brand-list" required value="${v.brand || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">底盤 / 車型 *[cite: 13]</label><input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm" list="model-list" required value="${v.model || ''}"></div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label><input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm" required value="${v.start_year || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label><input type="number" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm" value="${v.start_month || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm" required value="${v.end_year || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label><input type="number" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm" value="${v.end_month || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *[cite: 13]</label><input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm" required value="${v.start_year || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始月份[cite: 13]</label><input type="number" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm" value="${v.start_month || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *[cite: 13]</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm" required value="${v.end_year || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束月份[cite: 13]</label><input type="number" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm" value="${v.end_month || ''}"></div>
                     </div>
                 </div>
             `;
@@ -692,7 +689,7 @@
             container.innerHTML = '';
             Array.from(event.target.files).slice(0, 3).forEach(file => {
                 const reader = new FileReader();
-                reader.onload = (e) => container.innerHTML += `<img src="${e.target.result}" class="w-16 h-16 object-cover rounded border cursor-pointer" onclick="window.open('${e.target.result}', '_blank')">`;
+                reader.onload = (e) => container.innerHTML += `<img src="${e.target.result}" class="w-16 h-16 object-cover rounded border cursor-pointer" onclick="window.open('${e.target.result}', '_blank')">[cite: 13]`;
                 reader.readAsDataURL(file);
             });
         }
@@ -701,13 +698,13 @@
             const container = document.getElementById('edit-preview-container');
             container.innerHTML = '';
             if (editCurrentImages.length === 0) {
-                container.innerHTML = `<span class="text-xs text-slate-400">目前無照片</span>`;
+                container.innerHTML = `<span class="text-xs text-slate-400">目前無照片</span>[cite: 13]`;
                 return;
             }
             editCurrentImages.forEach((url, index) => {
                 container.innerHTML += `
                     <div class="relative inline-block">
-                        <img src="${url}" class="w-16 h-16 object-cover rounded border cursor-pointer" onclick="window.open('${url}', '_blank')">
+                        <img src="${url}" class="w-16 h-16 object-cover rounded border cursor-pointer" onclick="window.open('${url}', '_blank')">[cite: 13]
                         <button type="button" onclick="removeEditImage(${index})" class="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow hover:bg-red-700" title="刪除此張圖片">&times;</button>
                     </div>
                 `;
@@ -762,7 +759,7 @@
             document.getElementById('tab-add-btn').className = tab === 'add' ? 'pb-2 border-b-2 border-blue-600 font-semibold text-blue-600' : 'pb-2 font-semibold text-slate-500';
         }
 
-        // 🔗 跨料號無限雙向連動輔助工具
+        // 🔗 支援多筆與無限雙向聯集的交叉料號解析與同步工具
         function parseCrossRefCount(str) {
             if (!str) return [];
             return str.split(/[,，\s]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
@@ -784,6 +781,7 @@
                 }
             });
 
+            // 讓每一個在群組內的零件，其 cross_reference 自動互相補齊，達到無限連動效果[cite: 13]
             for (const pn of allInGroup) {
                 const targetPart = partMap.get(pn);
                 if (targetPart) {
@@ -806,7 +804,7 @@
             const keyword = document.getElementById('search-keyword').value.trim();
 
             const resultsContainer = document.getElementById('results');
-            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行綜合比對...</p>';
+            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行綜合比對...[cite: 13]</p>';
             document.getElementById('select-all-checkbox').checked = false;
 
             const { data: allData, error } = await _supabase.from('parts').select(`
@@ -816,7 +814,7 @@
 
             if (error) { resultsContainer.innerHTML = `<p class="text-red-500 text-sm text-center">❌ ${error.message}</p>`; return; }
 
-            // 1. 建立交叉料號連通圖
+            // 1. 建立交叉料號連通圖 (支援多筆交叉比對無限擴展)
             const adj = new Map();
             allData.forEach(item => {
                 const pNum = item.part_number ? item.part_number.trim().toUpperCase() : '';
@@ -856,7 +854,7 @@
                 group.forEach(node => partGroupMap.set(node, group));
             });
 
-            // 2. 初步條件篩選符合的零件（包含「被動對應」：若墊片在其 kit_parts 填了此膨脹閥，膨脹閥也會被帶出來）
+            // 2. 初步條件篩選
             const matchedInitialIds = new Set();
             allData.forEach(item => {
                 const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
@@ -881,7 +879,6 @@
                     });
                 }
 
-                // 智慧被動檢核：如果其他零件的配套 (kit_parts) 寫了這個料號，也算符合
                 let matchAsKitPart = false;
                 if (pNumUpper && keyword) {
                     matchAsKitPart = allData.some(other => other.kit_parts && other.kit_parts.toUpperCase().includes(pNumUpper));
@@ -892,7 +889,7 @@
                 }
             });
 
-            // 3. 透過交叉料號連通群組進行無限擴展聯集
+            // 3. 透過群組連動帶出其他相關零件
             const finalAllowedIds = new Set(matchedInitialIds);
             const partNumToIdMap = new Map();
             allData.forEach(item => {
@@ -920,14 +917,13 @@
         function renderResults(list, allData) {
             currentResultsCache = list;
             const resultsContainer = document.getElementById('results');
-            if (list.length === 0) { resultsContainer.innerHTML = `<p class="text-amber-600 text-sm text-center py-6 bg-amber-50 rounded-xl">查無符合條件的零件。</p>`; return; }
+            if (list.length === 0) { resultsContainer.innerHTML = `<p class="text-amber-600 text-sm text-center py-6 bg-amber-50 rounded-xl">查無符合條件的零件。</p>[cite: 13]`; return; }
 
             const cards = list.map(item => {
                 const vehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
                 const currentPN = item.part_number ? item.part_number.trim().toUpperCase() : '';
 
-                // 反向找出有哪些其他零件的 kit_parts 把當前零件料號包進去了（例如墊片填了膨脹閥料號）
                 const reverseLinkedParts = allData.filter(p => {
                     if (p.id === item.id || !p.kit_parts) return false;
                     const kitText = p.kit_parts.toUpperCase();
@@ -936,7 +932,6 @@
 
                 return `
                     <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:border-blue-400 transition space-y-3 relative">
-                        <!-- 批次勾選框 -->
                         <div class="absolute top-4 left-4">
                             <input type="checkbox" value="${item.id}" class="part-checkbox w-4 h-4 rounded text-blue-600 cursor-pointer">
                         </div>
@@ -952,8 +947,8 @@
                                 ${item.cost ? `<span class="text-[11px] text-slate-600 block">💵 成本：NT$ ${Number(item.cost).toLocaleString()}</span>` : ''}
                                 ${item.supplier_name ? `<span class="text-[11px] text-indigo-700 block">🏭 廠商：${item.supplier_name}</span>` : ''}
                                 <div class="flex gap-1 justify-end mt-2">
-                                    <button onclick="openEditModalById(${item.id})" class="text-xs bg-slate-100 text-blue-600 px-2 py-1 rounded border">✏️ 編輯</button>
-                                    <button onclick="deletePartById(${item.id}, '${item.part_name}')" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded border">🗑️ 刪除</button>
+                                    <button onclick="openEditModalById(${item.id})" class="text-xs bg-slate-100 text-blue-600 px-2 py-1 rounded border">✏️ 編輯[cite: 13]</button>
+                                    <button onclick="deletePartById(${item.id}, '${item.part_name}')" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded border">🗑️ 刪除[cite: 13]</button>
                                 </div>
                             </div>
                         </div>
@@ -963,28 +958,28 @@
                                 <div>本廠料號：<strong class="font-mono text-blue-900 bg-white px-1.5 py-0.5 rounded border">${item.part_number}</strong></div>
                                 ${(item.length || item.width || item.height) ? `
                                     <div class="text-slate-600 pt-1">
-                                        📏 尺寸規格：${item.length ? `長: ${item.length} ` : ''}${item.width ? `寬: ${item.width} ` : ''}${item.height ? `高: ${item.height}` : ''}
+                                        📏 尺寸規格：${item.length ? `長: ${item.length} ` : ''}${item.width ? `寬: ${item.width} ` : ''}${item.height ? `高: ${item.height}` : ''}[cite: 13]
                                     </div>` : ''}
                                 ${item.cross_reference ? `
                                     <div class="mt-1.5 pt-1.5 border-t">
                                         <span class="text-indigo-800 font-bold">🔗 交叉對照料號：</span>
-                                        <span onclick="jumpToKeywordSearch('${item.cross_reference.trim() || ''}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}</span>
+                                        <span onclick="jumpToKeywordSearch('${item.cross_reference.trim() || ''}')" class="font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition">${item.cross_reference}[cite: 13]</span>
                                     </div>` : ''}
                                 ${item.remarks ? `
                                     <div class="mt-1.5 pt-1.5 border-t text-slate-700">
-                                        <span class="font-bold text-slate-800">📝 備註說明：</span>${item.remarks}
+                                        <span class="font-bold text-slate-800">📝 備註說明：</span>${item.remarks}[cite: 13]
                                     </div>` : ''}
                             </div>
 
                             <div class="bg-amber-50/70 p-2.5 rounded-lg border border-amber-200 space-y-2">
                                 <div>
-                                    <span class="text-amber-900 font-bold block mb-1">🔧 建議搭配配套零組件：</span>
+                                    <span class="text-amber-900 font-bold block mb-1">🔧 建議搭配配套零組件：[cite: 13]</span>
                                     ${renderAssociatedKitCards(item.kit_parts, allData)}
                                 </div>
 
                                 ${reverseLinkedParts.length > 0 ? `
                                     <div class="border-t border-amber-200 pt-2">
-                                        <span class="text-amber-900 font-bold block mb-1">🔗 須對應此零件的品項 (自動對應)：</span>
+                                        <span class="text-amber-900 font-bold block mb-1">🔗 須對應此零件的品項 (自動對應)：[cite: 13]</span>
                                         <div class="space-y-1.5">
                                             ${reverseLinkedParts.map(rp => {
                                                 const rpImg = rp.image_1 || rp.image_2 || rp.image_3;
@@ -1000,7 +995,7 @@
                                                         </div>
                                                         <div class="text-right">
                                                             <span class="text-[11px] font-extrabold text-emerald-600 block">${rpPrice}</span>
-                                                            <button onclick="jumpToKeywordSearch('${rp.part_number}')" class="text-[10px] bg-amber-600 text-white px-1.5 py-0.5 rounded">查看</button>
+                                                            <button onclick="jumpToKeywordSearch('${rp.part_number}')" class="text-[10px] bg-amber-600 text-white px-1.5 py-0.5 rounded">查看[cite: 13]</button>
                                                         </div>
                                                     </div>
                                                 `;
@@ -1014,12 +1009,12 @@
                         ${images.length ? `<div class="flex gap-2 pl-7">${images.map(img => `<img src="${img}" class="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition" onclick="window.open('${img}', '_blank')" title="點擊另開視窗放大">`).join('')}</div>` : ''}
 
                         <div class="border-t pt-2 pl-7">
-                            <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容底盤與車種 (點擊標籤一鍵跳轉篩選)：</span>
+                            <span class="text-[11px] font-bold text-slate-400 block mb-1">🚘 相容底盤與車種 (點擊標籤一鍵跳轉篩選)：[cite: 13]</span>
                             <div class="flex flex-wrap gap-1">
                                 ${vehicles.map(v => `
                                     <span onclick="jumpToVehicleFilter('${v.brand}', '${v.model}', '${v.vehicle_type || ''}')" 
                                           class="text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2 py-0.5 rounded border cursor-pointer transition flex items-center gap-1">
-                                        <b class="text-blue-800">[${v.vehicle_type || '車種'}]</b> ${v.brand} ${v.model} (${v.start_year}-${v.end_year}) ↗
+                                        <b class="text-blue-800">[${v.vehicle_type || '車種'}]</b> ${v.brand} ${v.model} (${v.start_year}-${v.end_year}) ↗[cite: 13]
                                     </span>
                                 `).join('')}
                             </div>
