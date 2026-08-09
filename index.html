@@ -75,7 +75,7 @@
                 <!-- 料號與關聯對照關鍵字 -->
                 <div class="md:col-span-6 border-t pt-2 mt-1">
                     <label class="block text-xs font-semibold text-slate-600 mb-1">🔍 本廠 / OEM / 可替料號 / 配套零件關鍵字搜尋</label>
-                    <input type="text" id="search-keyword" placeholder="輸入料號例: DCP05001 / 膨脹閥 / O環 (按 Enter 可直接查詢)" onkeydown="if(event.key==='Enter') searchParts()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="search-keyword" placeholder="輸入料號例: DCP05001 / 2477 / 膨脹閥 (按 Enter 可直接查詢)" onkeydown="if(event.key==='Enter') searchParts()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
             </div>
 
@@ -689,7 +689,6 @@
             });
         }
 
-        // 修正後的編輯照片預覽與管理邏輯
         function renderEditImagesPreview() {
             const container = document.getElementById('edit-preview-container');
             container.innerHTML = '';
@@ -699,7 +698,6 @@
                 return;
             }
 
-            // 渲染資料庫原有的圖片
             editCurrentImages.forEach((url, index) => {
                 container.innerHTML += `
                     <div class="relative inline-block">
@@ -709,7 +707,6 @@
                 `;
             });
 
-            // 渲染新挑選準備上傳的圖片 (透過 ObjectURL 預覽)
             editNewFiles.forEach((file, index) => {
                 const objUrl = URL.createObjectURL(file);
                 container.innerHTML += `
@@ -740,7 +737,7 @@
                 editNewFiles.push(file);
             });
             renderEditImagesPreview();
-            event.target.value = ''; // 清空 file input 以便重複選擇同一張圖
+            event.target.value = '';
         }
 
         async function uploadImages(fileInputId) {
@@ -759,7 +756,6 @@
             return urls;
         }
 
-        // 專門用於上傳編輯時新加入的照片檔案
         async function uploadNewEditImages() {
             let urls = [];
             for (let i = 0; i < editNewFiles.length; i++) {
@@ -821,6 +817,7 @@
             }
         }
 
+        // 🚀 核心修正：嚴格的料號與關鍵字過濾搜尋邏輯
         async function searchParts() {
             const searchVType = document.getElementById('search-vehicle-type').value.trim().toLowerCase();
             const searchBrand = document.getElementById('search-brand').value.trim().toLowerCase();
@@ -830,7 +827,7 @@
             const keyword = document.getElementById('search-keyword').value.trim();
 
             const resultsContainer = document.getElementById('results');
-            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行綜合比對...</p>';
+            resultsContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-6">🔍 正在進行精準比對...</p>';
             document.getElementById('select-all-checkbox').checked = false;
 
             const { data: allData, error } = await _supabase.from('parts').select(`
@@ -843,17 +840,29 @@
             const matchedInitialIds = new Set();
             allData.forEach(item => {
                 const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
-                const pNumUpper = item.part_number ? item.part_number.trim().toUpperCase() : '';
                 
-                const matchName = selectedPartNames.length === 0 || selectedPartNames.some(name => item.part_name && item.part_name.toLowerCase().includes(name.toLowerCase()));
+                // 1. 零件名稱篩選 ( Chips 複選交集)
+                const matchName = selectedPartNames.length === 0 || selectedPartNames.some(name => item.part_name && item.part_name.toLowerCase() === name.toLowerCase());
                 
+                // 2. 關鍵字 / 料號精準篩選
                 let matchKeyword = true;
                 if (keyword) {
                     const kw = keyword.toLowerCase();
-                    const fields = [item.part_name, item.part_number, item.oem_number, item.cross_reference, item.kit_parts, item.remarks];
-                    matchKeyword = fields.some(f => f && String(f).toLowerCase().includes(kw));
+                    const pNum = item.part_number ? item.part_number.toLowerCase() : '';
+                    const oemNum = item.oem_number ? item.oem_number.toLowerCase() : '';
+                    const crossRef = item.cross_reference ? item.cross_reference.toLowerCase() : '';
+                    const pName = item.part_name ? item.part_name.toLowerCase() : '';
+                    const remarks = item.remarks ? item.remarks.toLowerCase() : '';
+
+                    // 嚴格判定：如果使用者輸入的是料號相關字串（包含數字或英文代號），優先對齊料號、OEM、可替料號欄位；同時也支援零件名稱或備註。
+                    // 為了完全排除「沒有包含該關鍵字」的雜訊，必須確保該筆資料的料號欄位中確實包含此關鍵字，或是其他欄位相符。
+                    const isPartNumberMatch = pNum.includes(kw) || oemNum.includes(kw) || crossRef.includes(kw);
+                    const isTextMatch = pName.includes(kw) || remarks.includes(kw);
+
+                    matchKeyword = isPartNumberMatch || isTextMatch;
                 }
 
+                // 3. 車型/年份篩選
                 let matchVehicle = true;
                 if (searchVType || searchBrand || searchModel || !isNaN(year)) {
                     matchVehicle = vehicleList.some(v => {
@@ -864,17 +873,11 @@
                     });
                 }
 
-                let matchAsKitPart = false;
-                if (pNumUpper && keyword) {
-                    matchAsKitPart = allData.some(other => other.kit_parts && other.kit_parts.toUpperCase().includes(pNumUpper));
-                }
-
-                if ((matchName && matchKeyword && matchVehicle) || matchAsKitPart) {
+                if (matchName && matchKeyword && matchVehicle) {
                     matchedInitialIds.add(item.id);
                 }
             });
 
-            // 修正：不再將整組 cross_reference 關聯零件全部自動展開為獨立卡片，僅顯示真正符合搜尋條件的項目
             const filteredData = allData.filter(item => matchedInitialIds.has(item.id));
             renderResults(filteredData, allData);
         }
@@ -919,7 +922,7 @@
                             </div>
                         </div>
 
-                        <!-- 🛠️ 改善版面：將過大的區塊整合，緊湊顯示料號、OEM、尺寸與備註 -->
+                        <!-- 🛠️ 改善版面：緊湊顯示料號、OEM、尺寸與備註 -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pl-7 mt-2">
                             <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2 text-xs">
                                 <div class="flex items-center justify-between">
@@ -1019,7 +1022,7 @@
             document.getElementById('edit-remarks').value = item.remarks || '';
 
             editCurrentImages = [item.image_1, item.image_2, item.image_3].filter(Boolean);
-            editNewFiles = []; // 清空待上傳暫存
+            editNewFiles = [];
             renderEditImagesPreview();
             document.getElementById('edit-images').value = '';
 
@@ -1044,7 +1047,6 @@
             const partNum = document.getElementById('edit-part-number').value.trim();
             const crossRefText = document.getElementById('edit-cross-ref').value.trim();
 
-            // 上傳新選取的圖片並取得 URL
             const newlyUploadedUrls = await uploadNewEditImages();
             const finalImages = [...editCurrentImages, ...newlyUploadedUrls].slice(0, 3);
 
