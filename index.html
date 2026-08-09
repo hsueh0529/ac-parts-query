@@ -6,6 +6,32 @@
     <title>HW零件資料庫</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* 自訂浮動建議清單樣式，確保手機網頁版能完美下拉與點擊 */
+        .suggestions-dropdown {
+            position: absolute;
+            z-index: 50;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-height: 12rem;
+            overflow-y: auto;
+            width: 100%;
+            left: 0;
+            margin-top: 2px;
+        }
+        .suggestion-item {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            color: #334155;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background-color: #f1f5f9;
+            color: #2563eb;
+        }
+    </style>
 </head>
 <body class="bg-slate-100 min-h-screen p-3 md:p-8 text-slate-800">
 
@@ -20,7 +46,7 @@
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
         <h1 class="text-xl md:text-2xl font-bold text-slate-800 mb-4 border-b pb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">❄️HW空調零件與配套組合管理系統</span>
+            <span class="flex items-center gap-2">❄️HW零件管理系統</span>
             <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 雲端同步中
             </span>
@@ -41,24 +67,40 @@
 
             <!-- 複合搜尋條件 (雙向連動綁定) -->
             <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div>
+                
+                <!-- 車種類別 -->
+                <div class="relative">
                     <label class="block text-xs font-semibold text-slate-600 mb-1">🚜 車種類別</label>
-                    <input type="text" id="search-vehicle-type" list="vehicle-type-list" placeholder="手動輸入或選擇..." oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="search-vehicle-type" list="vehicle-type-list" placeholder="手動輸入或選擇..." 
+                           oninput="triggerTwoWaySync(); showSuggestions('search-vehicle-type', 'vehicle-type-list', 'search-vtype-suggestions')" 
+                           onfocus="showSuggestions('search-vehicle-type', 'vehicle-type-list', 'search-vtype-suggestions')"
+                           class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <div id="search-vtype-suggestions" class="suggestions-dropdown hidden"></div>
                 </div>
 
-                <div>
+                <!-- 車廠 / 品牌 -->
+                <div class="relative">
                     <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌</label>
-                    <input type="text" id="search-brand" list="brand-list" placeholder="選擇或輸入品牌..." oninput="handleBrandChange(); triggerTwoWaySync();" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="search-brand" list="brand-list" placeholder="選擇或輸入品牌..." 
+                           oninput="handleBrandChange(); triggerTwoWaySync(); showSuggestions('search-brand', 'brand-list', 'search-brand-suggestions')" 
+                           onfocus="showSuggestions('search-brand', 'brand-list', 'search-brand-suggestions')"
+                           class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <div id="search-brand-suggestions" class="suggestions-dropdown hidden"></div>
                 </div>
 
-                <div>
+                <!-- 底盤號 / 車型 -->
+                <div class="relative">
                     <label class="block text-xs font-semibold text-slate-600 mb-1">底盤號 / 車型</label>
-                    <input type="text" id="search-model" list="model-list" placeholder="例: W246 / E36" oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="search-model" list="model-list" placeholder="例: W246 / E36" 
+                           oninput="triggerTwoWaySync(); showSuggestions('search-model', 'model-list', 'search-model-suggestions')" 
+                           onfocus="showSuggestions('search-model', 'model-list', 'search-model-suggestions')"
+                           class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <div id="search-model-suggestions" class="suggestions-dropdown hidden"></div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">年份 (出廠/適用)</label>
-                    <input type="number" id="search-year" placeholder="例: 2015" oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="number" id="search-year" placeholder="例: 2015" oninput="triggerTwoWaySync()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                 </div>
 
                 <!-- 零件名稱點擊複選區域 (雙向連動 Chips) -->
@@ -75,7 +117,7 @@
                 <!-- 料號與關聯對照關鍵字 -->
                 <div class="md:col-span-6 border-t pt-2 mt-1">
                     <label class="block text-xs font-semibold text-slate-600 mb-1">🔍 本廠 / OEM / 可替料號 / 配套零件關鍵字搜尋</label>
-                    <input type="text" id="search-keyword" placeholder="輸入料號例: DCP05001 / 2477 / 膨脹閥 (按 Enter 可直接查詢)" onkeydown="if(event.key==='Enter') searchParts()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="search-keyword" placeholder="輸入料號例: DCP05001 / 2477 / 膨脹閥 (按 Enter 可直接查詢)" onkeydown="if(event.key==='Enter') searchParts()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                 </div>
             </div>
 
@@ -118,24 +160,32 @@
                     </h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
+                        <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *</label>
-                            <input type="text" id="add-part-name" list="part-name-list" required placeholder="可自由輸入 (例: 風箱 / 壓縮機)" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="add-part-name" list="part-name-list" required placeholder="可自由輸入 (例: 風箱 / 壓縮機)" 
+                                   oninput="showSuggestions('add-part-name', 'part-name-list', 'add-pname-suggestions')"
+                                   onfocus="showSuggestions('add-part-name', 'part-name-list', 'add-pname-suggestions')"
+                                   class="w-full border rounded-lg p-2 text-sm bg-white">
+                            <div id="add-pname-suggestions" class="suggestions-dropdown hidden"></div>
                         </div>
-                        <div>
+                        <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件品牌/製造商 *</label>
-                            <input type="text" id="add-brand-name" list="part-brand-list" required placeholder="可自由輸入 (例: 正廠 / Denso)" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="add-brand-name" list="part-brand-list" required placeholder="可自由輸入 (例: 正廠 / Denso)" 
+                                   oninput="showSuggestions('add-brand-name', 'part-brand-list', 'add-pbrand-suggestions')"
+                                   onfocus="showSuggestions('add-brand-name', 'part-brand-list', 'add-pbrand-suggestions')"
+                                   class="w-full border rounded-lg p-2 text-sm bg-white">
+                            <div id="add-pbrand-suggestions" class="suggestions-dropdown hidden"></div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">本廠/主要零件料號 *</label>
-                            <input type="text" id="add-part-number" required placeholder="例如: DCP05001" class="w-full border rounded-lg p-2 text-sm font-mono font-bold text-blue-900">
+                            <input type="text" id="add-part-number" required placeholder="例如: DCP05001" class="w-full border rounded-lg p-2 text-sm font-mono font-bold text-blue-900 bg-white">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">原廠 OEM 料號 (選填)</label>
-                            <input type="text" id="add-oem-number" placeholder="例如: 64528385915" class="w-full border rounded-lg p-2 text-sm font-mono">
+                            <input type="text" id="add-oem-number" placeholder="例如: 64528385915" class="w-full border rounded-lg p-2 text-sm font-mono bg-white">
                         </div>
                     </div>
 
@@ -145,15 +195,15 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">長度</label>
-                                <input type="text" id="add-length" placeholder="例: 250mm" class="w-full border rounded-lg p-2 text-sm">
+                                <input type="text" id="add-length" placeholder="例: 250mm" class="w-full border rounded-lg p-2 text-sm bg-white">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">寬度</label>
-                                <input type="text" id="add-width" placeholder="例: 150mm" class="w-full border rounded-lg p-2 text-sm">
+                                <input type="text" id="add-width" placeholder="例: 150mm" class="w-full border rounded-lg p-2 text-sm bg-white">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">高度</label>
-                                <input type="text" id="add-height" placeholder="例: 80mm" class="w-full border rounded-lg p-2 text-sm">
+                                <input type="text" id="add-height" placeholder="例: 80mm" class="w-full border rounded-lg p-2 text-sm bg-white">
                             </div>
                         </div>
                     </div>
@@ -163,7 +213,7 @@
                             🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)
                             <span class="font-normal text-[11px] text-indigo-700 block">提示：可輸入多筆（如 A, B, C），系統將自動雙向無限連動。</span>
                         </label>
-                        <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
+                        <textarea id="add-cross-ref" rows="2" placeholder="例: 447220-8020, 64526908660" class="w-full border rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
 
                     <div class="bg-amber-50/80 p-3 rounded-lg border border-amber-200">
@@ -175,13 +225,17 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
+                        <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商/盤商 (選填)</label>
-                            <input type="text" id="add-supplier-name" list="supplier-list" placeholder="例如: 台灣電綜 / 永晟" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="add-supplier-name" list="supplier-list" placeholder="例如: 台灣電綜 / 永晟" 
+                                   oninput="showSuggestions('add-supplier-name', 'supplier-list', 'add-supplier-suggestions')"
+                                   onfocus="showSuggestions('add-supplier-name', 'supplier-list', 'add-supplier-suggestions')"
+                                   class="w-full border rounded-lg p-2 text-sm bg-white">
+                            <div id="add-supplier-suggestions" class="suggestions-dropdown hidden"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">備註/規格說明</label>
-                            <input type="text" id="add-remarks" placeholder="例如: R134a, 帶線圈, 24V" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="add-remarks" placeholder="例如: R134a, 帶線圈, 24V" class="w-full border rounded-lg p-2 text-sm bg-white">
                         </div>
                     </div>
 
@@ -190,15 +244,15 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">進貨成本 (NT$)</label>
-                                <input type="number" id="add-cost" placeholder="4500" class="w-full border rounded-lg p-2 text-sm">
+                                <input type="number" id="add-cost" placeholder="4500" class="w-full border rounded-lg p-2 text-sm bg-white">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">參考前價 (NT$)</label>
-                                <input type="number" id="add-price" placeholder="6800" class="w-full border rounded-lg p-2 text-sm">
+                                <input type="number" id="add-price" placeholder="6800" class="w-full border rounded-lg p-2 text-sm bg-white">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">前價日期</label>
-                                <input type="date" id="add-price-date" class="w-full border rounded-lg p-2 text-sm">
+                                <input type="date" id="add-price-date" class="w-full border rounded-lg p-2 text-sm bg-white">
                             </div>
                         </div>
                     </div>
@@ -240,24 +294,32 @@
                 <input type="hidden" id="edit-id">
                 <div class="space-y-3">
                     <div class="grid grid-cols-2 gap-2">
-                        <div>
+                        <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *</label>
-                            <input type="text" id="edit-part-name" list="part-name-list" required class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="edit-part-name" list="part-name-list" required 
+                                   oninput="showSuggestions('edit-part-name', 'part-name-list', 'edit-pname-suggestions')"
+                                   onfocus="showSuggestions('edit-part-name', 'part-name-list', 'edit-pname-suggestions')"
+                                   class="w-full border rounded-lg p-2 text-sm bg-white">
+                            <div id="edit-pname-suggestions" class="suggestions-dropdown hidden"></div>
                         </div>
-                        <div>
+                        <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">品牌 *</label>
-                            <input type="text" id="edit-brand-name" list="part-brand-list" required class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="edit-brand-name" list="part-brand-list" required 
+                                   oninput="showSuggestions('edit-brand-name', 'part-brand-list', 'edit-pbrand-suggestions')"
+                                   onfocus="showSuggestions('edit-brand-name', 'part-brand-list', 'edit-pbrand-suggestions')"
+                                   class="w-full border rounded-lg p-2 text-sm bg-white">
+                            <div id="edit-pbrand-suggestions" class="suggestions-dropdown hidden"></div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">本廠料號 *</label>
-                            <input type="text" id="edit-part-number" required class="w-full border rounded-lg p-2 text-sm font-mono font-bold">
+                            <input type="text" id="edit-part-number" required class="w-full border rounded-lg p-2 text-sm font-mono font-bold bg-white">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">原廠 OEM 料號</label>
-                            <input type="text" id="edit-oem-number" class="w-full border rounded-lg p-2 text-sm font-mono">
+                            <input type="text" id="edit-oem-number" class="w-full border rounded-lg p-2 text-sm font-mono bg-white">
                         </div>
                     </div>
 
@@ -267,22 +329,22 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-1">長度</label>
-                                <input type="text" id="edit-length" class="w-full border rounded-lg p-1.5 text-sm">
+                                <input type="text" id="edit-length" class="w-full border rounded-lg p-1.5 text-sm bg-white">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-1">寬度</label>
-                                <input type="text" id="edit-width" class="w-full border rounded-lg p-1.5 text-sm">
+                                <input type="text" id="edit-width" class="w-full border rounded-lg p-1.5 text-sm bg-white">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-1">高度</label>
-                                <input type="text" id="edit-height" class="w-full border rounded-lg p-1.5 text-sm">
+                                <input type="text" id="edit-height" class="w-full border rounded-lg p-1.5 text-sm bg-white">
                             </div>
                         </div>
                     </div>
 
                     <div class="bg-indigo-50/70 p-2.5 rounded-lg border border-indigo-200">
                         <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 可替料號 (Cross Reference)</label>
-                        <textarea id="edit-cross-ref" rows="2" class="w-full border rounded-lg p-2 text-sm font-mono"></textarea>
+                        <textarea id="edit-cross-ref" rows="2" class="w-full border rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
 
                     <div class="bg-amber-50/80 p-2.5 rounded-lg border border-amber-200">
@@ -291,13 +353,17 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
-                        <div>
+                        <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商</label>
-                            <input type="text" id="edit-supplier-name" list="supplier-list" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="edit-supplier-name" list="supplier-list" 
+                                   oninput="showSuggestions('edit-supplier-name', 'supplier-list', 'edit-supplier-suggestions')"
+                                   onfocus="showSuggestions('edit-supplier-name', 'supplier-list', 'edit-supplier-suggestions')"
+                                   class="w-full border rounded-lg p-2 text-sm bg-white">
+                            <div id="edit-supplier-suggestions" class="suggestions-dropdown hidden"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">備註說明</label>
-                            <input type="text" id="edit-remarks" class="w-full border rounded-lg p-2 text-sm">
+                            <input type="text" id="edit-remarks" class="w-full border rounded-lg p-2 text-sm bg-white">
                         </div>
                     </div>
 
@@ -306,15 +372,15 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-1">進貨成本</label>
-                                <input type="number" id="edit-cost" class="w-full border rounded-lg p-1.5 text-sm">
+                                <input type="number" id="edit-cost" class="w-full border rounded-lg p-1.5 text-sm bg-white">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-1">參考前價</label>
-                                <input type="number" id="edit-price" class="w-full border rounded-lg p-1.5 text-sm">
+                                <input type="number" id="edit-price" class="w-full border rounded-lg p-1.5 text-sm bg-white">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-1">前價日期</label>
-                                <input type="date" id="edit-price-date" class="w-full border rounded-lg p-1.5 text-sm">
+                                <input type="date" id="edit-price-date" class="w-full border rounded-lg p-1.5 text-sm bg-white">
                             </div>
                         </div>
                     </div>
@@ -359,13 +425,58 @@
         let allPartNamesCache = [];
         let isSyncing = false;
         
-        let editCurrentImages = []; // 已上傳且存在資料庫的圖片 URL
-        let editNewFiles = [];      // 編輯時新挑選準備上傳的 File 物件
+        let editCurrentImages = []; 
+        let editNewFiles = [];      
 
         document.addEventListener('DOMContentLoaded', () => {
             initHistoryDatalists();
             addVehicleRow('add-vehicles-container', 'add');
+
+            // 點擊頁面其他地方時隱藏所有的自訂下拉建議選單
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('input') && !e.target.closest('.suggestions-dropdown')) {
+                    document.querySelectorAll('.suggestions-dropdown').forEach(el => el.classList.add('hidden'));
+                }
+            });
         });
+
+        // 🚀 行動版通用的自訂懸浮建議選單機制（解決手機 datalist 不彈出問題）
+        function showSuggestions(inputId, datalistId, dropdownId) {
+            const input = document.getElementById(inputId);
+            const datalist = document.getElementById(datalistId);
+            const dropdown = document.getElementById(dropdownId);
+            if (!input || !datalist || !dropdown) return;
+
+            const val = input.value.trim().toLowerCase();
+            const options = Array.from(datalist.querySelectorAll('option')).map(opt => opt.value);
+            const filtered = options.filter(opt => opt.toLowerCase().includes(val));
+
+            if (filtered.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = filtered.map(item => `
+                <div class="suggestion-item" onclick="selectSuggestion('${inputId}', '${dropdownId}', '${item.replace(/'/g, "\\'")}')">
+                    ${item}
+                </div>
+            `).join('');
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectSuggestion(inputId, dropdownId, value) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = value;
+                // 觸發 input 事件以同步對應聯動函數
+                const event = new Event('input', { bubbles: true });
+                input.dispatchEvent(event);
+            }
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+                dropdown.classList.add('hidden');
+            }
+        }
 
         async function initHistoryDatalists() {
             try {
@@ -453,7 +564,6 @@
             searchParts();
         }
 
-        // 解析配套中括號並列出所有匹配項
         function renderAssociatedKitCards(kitPartsText, allPartsList) {
             if (!kitPartsText) return '<span class="text-slate-400 text-[11px]">尚未設定搭配配套零件</span>';
             
@@ -624,18 +734,57 @@
                 <div class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
                     <button type="button" onclick="removeVehicleRow(this)" class="absolute top-2 right-2 text-red-500 text-xs font-bold px-2 py-1">🗑️ 刪除</button>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-12">
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *</label><input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm" list="vehicle-type-list" required value="${v.vehicle_type || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *</label><input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm" list="brand-list" required value="${v.brand || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">底盤 / 車型 *</label><input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm" list="model-list" required value="${v.model || ''}"></div>
+                        <div class="relative"><label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *</label><input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm bg-white" list="vehicle-type-list" required value="${v.vehicle_type || ''}" oninput="showSuggestionsForElement(this, 'vehicle-type-list')" onfocus="showSuggestionsForElement(this, 'vehicle-type-list')"></div>
+                        <div class="relative"><label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *</label><input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm bg-white" list="brand-list" required value="${v.brand || ''}" oninput="showSuggestionsForElement(this, 'brand-list')" onfocus="showSuggestionsForElement(this, 'brand-list')"></div>
+                        <div class="relative"><label class="block text-xs font-semibold text-slate-600 mb-1">底盤 / 車型 *</label><input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm bg-white" list="model-list" required value="${v.model || ''}" oninput="showSuggestionsForElement(this, 'model-list')" onfocus="showSuggestionsForElement(this, 'model-list')"></div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label><input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm" required value="${v.start_year || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label><input type="number" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm" value="${v.start_month || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm" required value="${v.end_year || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label><input type="number" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm" value="${v.end_month || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label><input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm bg-white" required value="${v.start_year || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label><input type="number" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.start_month || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm bg-white" required value="${v.end_year || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label><input type="number" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.end_month || ''}"></div>
                     </div>
                 </div>
             `;
+        }
+
+        // 動態車型列的即時選單輔助
+        function showSuggestionsForElement(inputEl, datalistId) {
+            let dropdown = inputEl.nextElementSibling;
+            if (!dropdown || !dropdown.classList.contains('suggestions-dropdown')) {
+                dropdown = document.createElement('div');
+                dropdown.className = 'suggestions-dropdown hidden';
+                inputEl.parentNode.style.position = 'relative';
+                inputEl.parentNode.appendChild(dropdown);
+            }
+
+            const val = inputEl.value.trim().toLowerCase();
+            const datalist = document.getElementById(datalistId);
+            if (!datalist) return;
+            const options = Array.from(datalist.querySelectorAll('option')).map(opt => opt.value);
+            const filtered = options.filter(opt => opt.toLowerCase().includes(val));
+
+            if (filtered.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = filtered.map(item => `
+                <div class="suggestion-item" onclick="selectElementValue(this, '${item.replace(/'/g, "\\'")}')">
+                    ${item}
+                </div>
+            `).join('');
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectElementValue(itemEl, value) {
+            const dropdown = itemEl.closest('.suggestions-dropdown');
+            const input = dropdown.previousElementSibling;
+            if (input) {
+                input.value = value;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            dropdown.classList.add('hidden');
         }
 
         function addVehicleRow(containerId, prefix, vData = {}) {
@@ -817,7 +966,6 @@
             }
         }
 
-        // 🚀 核心修正：嚴格的料號與關鍵字過濾搜尋邏輯
         async function searchParts() {
             const searchVType = document.getElementById('search-vehicle-type').value.trim().toLowerCase();
             const searchBrand = document.getElementById('search-brand').value.trim().toLowerCase();
@@ -841,10 +989,8 @@
             allData.forEach(item => {
                 const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 
-                // 1. 零件名稱篩選 ( Chips 複選交集)
                 const matchName = selectedPartNames.length === 0 || selectedPartNames.some(name => item.part_name && item.part_name.toLowerCase() === name.toLowerCase());
                 
-                // 2. 關鍵字 / 料號精準篩選
                 let matchKeyword = true;
                 if (keyword) {
                     const kw = keyword.toLowerCase();
@@ -854,15 +1000,12 @@
                     const pName = item.part_name ? item.part_name.toLowerCase() : '';
                     const remarks = item.remarks ? item.remarks.toLowerCase() : '';
 
-                    // 嚴格判定：如果使用者輸入的是料號相關字串（包含數字或英文代號），優先對齊料號、OEM、可替料號欄位；同時也支援零件名稱或備註。
-                    // 為了完全排除「沒有包含該關鍵字」的雜訊，必須確保該筆資料的料號欄位中確實包含此關鍵字，或是其他欄位相符。
                     const isPartNumberMatch = pNum.includes(kw) || oemNum.includes(kw) || crossRef.includes(kw);
                     const isTextMatch = pName.includes(kw) || remarks.includes(kw);
 
                     matchKeyword = isPartNumberMatch || isTextMatch;
                 }
 
-                // 3. 車型/年份篩選
                 let matchVehicle = true;
                 if (searchVType || searchBrand || searchModel || !isNaN(year)) {
                     matchVehicle = vehicleList.some(v => {
@@ -904,7 +1047,6 @@
                             <input type="checkbox" value="${item.id}" class="part-checkbox w-4 h-4 rounded text-blue-600 cursor-pointer">
                         </div>
 
-                        <!-- 頂部標題區 -->
                         <div class="flex justify-between items-start pl-7">
                             <div>
                                 <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">${item.brand_name || '通用'}</span>
@@ -922,7 +1064,6 @@
                             </div>
                         </div>
 
-                        <!-- 🛠️ 改善版面：緊湊顯示料號、OEM、尺寸與備註 -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pl-7 mt-2">
                             <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2 text-xs">
                                 <div class="flex items-center justify-between">
