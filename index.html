@@ -42,6 +42,8 @@
     <datalist id="vehicle-type-list"></datalist>
     <datalist id="brand-list"></datalist>
     <datalist id="model-list"></datalist>
+    <!-- 新增專用的動態車型對應 datalist -->
+    <datalist id="add-model-list"></datalist>
 
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 頂部標題與連線狀態 -->
@@ -501,6 +503,11 @@
                     document.getElementById('vehicle-type-list').innerHTML = customTypes.map(t => `<option value="${t}">`).join('');
                     document.getElementById('brand-list').innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
                     updateModelDatalist();
+                    
+                    // 同步更新現有車型列中的品牌 datalist
+                    document.querySelectorAll('datalist[id^="brand-list-dynamic"]').forEach(dl => {
+                        dl.innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
+                    });
                 }
             } catch (e) { console.warn(e); }
         }
@@ -730,13 +737,45 @@
         }
 
         function createVehicleRowHTML(prefix, v = {}) {
+            const uniqueId = Math.random().toString(36).substring(2, 9);
+            const brandDatalistId = `brand-list-dynamic-${uniqueId}`;
+            const modelDatalistId = `model-list-dynamic-${uniqueId}`;
+            
+            // 預先取得現有品牌的對應車型選項
+            const vBrands = [...new Set(allVehiclesCache.map(veh => veh.brand ? veh.brand.trim() : '').filter(Boolean))];
+            
+            setTimeout(() => {
+                const dl = document.getElementById(brandDatalistId);
+                if (dl) dl.innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
+                if (v.brand) {
+                    // 若有帶入初始品牌 (如編輯時)，更新對應的 model datalist
+                    const rowEl = document.getElementById(`veh-row-${uniqueId}`);
+                    if (rowEl) {
+                        const modelInput = rowEl.querySelector(`.${prefix}-v-model`);
+                        if (modelInput) updateDynamicModelList(modelInput, v.brand);
+                    }
+                }
+            }, 50);
+
             return `
-                <div class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
+                <div id="veh-row-${uniqueId}" class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
                     <button type="button" onclick="removeVehicleRow(this)" class="absolute top-2 right-2 text-red-500 text-xs font-bold px-2 py-1">🗑️ 刪除</button>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-12">
                         <div class="relative"><label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *</label><input type="text" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm bg-white" list="vehicle-type-list" required value="${v.vehicle_type || ''}" oninput="showSuggestionsForElement(this, 'vehicle-type-list')" onfocus="showSuggestionsForElement(this, 'vehicle-type-list')"></div>
-                        <div class="relative"><label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *</label><input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm bg-white" list="brand-list" required value="${v.brand || ''}" oninput="showSuggestionsForElement(this, 'brand-list')" onfocus="showSuggestionsForElement(this, 'brand-list')"></div>
-                        <div class="relative"><label class="block text-xs font-semibold text-slate-600 mb-1">底盤 / 車型 *</label><input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm bg-white" list="model-list" required value="${v.model || ''}" oninput="showSuggestionsForElement(this, 'model-list')" onfocus="showSuggestionsForElement(this, 'model-list')"></div>
+                        <div class="relative">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">車廠 / 品牌 *</label>
+                            <input type="text" class="${prefix}-v-brand w-full border rounded-lg p-2 text-sm bg-white" list="${brandDatalistId}" required value="${v.brand || ''}" 
+                                   oninput="handleDynamicBrandInput(this, '${modelDatalistId}'); showSuggestionsForElement(this, '${brandDatalistId}')" 
+                                   onfocus="showSuggestionsForElement(this, '${brandDatalistId}')">
+                            <datalist id="${brandDatalistId}"></datalist>
+                        </div>
+                        <div class="relative">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">底盤 / 車型 *</label>
+                            <input type="text" class="${prefix}-v-model w-full border rounded-lg p-2 text-sm bg-white" list="${modelDatalistId}" required value="${v.model || ''}" 
+                                   oninput="showSuggestionsForElement(this, '${modelDatalistId}')" 
+                                   onfocus="showSuggestionsForElement(this, '${modelDatalistId}')">
+                            <datalist id="${modelDatalistId}"></datalist>
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label><input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm bg-white" required value="${v.start_year || ''}"></div>
@@ -746,6 +785,31 @@
                     </div>
                 </div>
             `;
+        }
+
+        // 當動態新增/編輯列的品牌改變時，即時過濾並更新對應的車種 datalist
+        function handleDynamicBrandInput(brandInputEl, modelDatalistId) {
+            const brandVal = brandInputEl.value.trim();
+            const rowEl = brandInputEl.closest('.vehicle-row');
+            if (!rowEl) return;
+            const modelInputEl = rowEl.querySelector('input[class*="-v-model"]');
+            if (modelInputEl) {
+                modelInputEl.value = ''; // 品牌改變時清空原先填寫的車型
+            }
+            updateDynamicModelList(modelInputEl, brandVal, modelDatalistId);
+        }
+
+        function updateDynamicModelList(modelInputEl, brandVal, providedDatalistId) {
+            if (!modelInputEl) return;
+            const datalistId = providedDatalistId || modelInputEl.getAttribute('list');
+            if (!datalistId) return;
+            const datalistEl = document.getElementById(datalistId);
+            if (!datalistEl) return;
+
+            const selectedBrand = brandVal.trim().toLowerCase();
+            let filtered = selectedBrand ? allVehiclesCache.filter(v => v.brand && v.brand.toLowerCase().includes(selectedBrand)) : allVehiclesCache;
+            const models = [...new Set(filtered.map(v => v.model ? v.model.trim() : '').filter(Boolean))];
+            datalistEl.innerHTML = models.map(m => `<option value="${m}">`).join('');
         }
 
         // 動態車型列的即時選單輔助
@@ -923,6 +987,14 @@
             const selectedBrand = document.getElementById('search-brand').value.trim().toLowerCase();
             let filtered = selectedBrand ? allVehiclesCache.filter(v => v.brand.toLowerCase().includes(selectedBrand)) : allVehiclesCache;
             document.getElementById('model-list').innerHTML = [...new Set(filtered.map(v => v.model).filter(Boolean))].map(m => `<option value="${m}">`).join('');
+        }
+
+        function updateModelDatalist() {
+            const models = [...new Set(allVehiclesCache.map(v => v.model ? v.model.trim() : '').filter(Boolean))];
+            const modelListEl = document.getElementById('model-list');
+            if (modelListEl) {
+                modelListEl.innerHTML = models.map(m => `<option value="${m}">`).join('');
+            }
         }
 
         function switchTab(tab) {
