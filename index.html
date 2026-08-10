@@ -42,7 +42,6 @@
     <datalist id="vehicle-type-list"></datalist>
     <datalist id="brand-list"></datalist>
     <datalist id="model-list"></datalist>
-    <!-- 新增專用的動態車型對應 datalist -->
     <datalist id="add-model-list"></datalist>
 
     <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
@@ -161,7 +160,7 @@
                         📦 基本零件主檔與品牌
                     </h2>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *</label>
                             <input type="text" id="add-part-name" list="part-name-list" required placeholder="可自由輸入 (例: 風箱 / 壓縮機)" 
@@ -177,6 +176,10 @@
                                    onfocus="showSuggestions('add-brand-name', 'part-brand-list', 'add-pbrand-suggestions')"
                                    class="w-full border rounded-lg p-2 text-sm bg-white">
                             <div id="add-pbrand-suggestions" class="suggestions-dropdown hidden"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">產品產地 (選填)</label>
+                            <input type="text" id="add-origin" placeholder="例: 台灣 / 日本 / 中國" class="w-full border rounded-lg p-2 text-sm bg-white">
                         </div>
                     </div>
 
@@ -210,6 +213,21 @@
                         </div>
                     </div>
 
+                    <!-- 冷氣系統容量規範 (冷凍油量與冷媒量) -->
+                    <div class="bg-blue-50/70 p-3 rounded-lg border border-blue-200">
+                        <label class="block text-xs font-bold text-blue-900 mb-2">❄️ 冷氣系統容量規範 (選填)</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">冷凍油量</label>
+                                <input type="text" id="add-oil-capacity" placeholder="例: PAG46 150ml" class="w-full border rounded-lg p-2 text-sm bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">冷媒量</label>
+                                <input type="text" id="add-refrigerant-capacity" placeholder="例: R134a 500g" class="w-full border rounded-lg p-2 text-sm bg-white">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-indigo-50/70 p-3 rounded-lg border border-indigo-200">
                         <label class="block text-xs font-bold text-indigo-900 mb-1">
                             🔗 相容 / 替代 / 交叉對照料號 (Cross-Reference)
@@ -226,28 +244,15 @@
                         <textarea id="add-kit-parts" rows="2" placeholder="格式範例: 膨脹閥 [V-101], 墊片 [GASKET-01]" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div class="relative">
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商/盤商 (選填)</label>
-                            <input type="text" id="add-supplier-name" list="supplier-list" placeholder="例如: 台灣電綜 / 永晟" 
-                                   oninput="showSuggestions('add-supplier-name', 'supplier-list', 'add-supplier-suggestions')"
-                                   onfocus="showSuggestions('add-supplier-name', 'supplier-list', 'add-supplier-suggestions')"
-                                   class="w-full border rounded-lg p-2 text-sm bg-white">
-                            <div id="add-supplier-suggestions" class="suggestions-dropdown hidden"></div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">備註/規格說明</label>
-                            <input type="text" id="add-remarks" placeholder="例如: R134a, 帶線圈, 24V" class="w-full border rounded-lg p-2 text-sm bg-white">
-                        </div>
+                    <!-- 零件本身的備註框 (獨立保留) -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">零件主檔備註/規格說明 (獨立)</label>
+                        <input type="text" id="add-remarks" placeholder="例如: R134a, 帶線圈, 24V" class="w-full border rounded-lg p-2 text-sm bg-white">
                     </div>
 
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-bold text-slate-700 mb-2">💵 價格與成本紀錄</label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">進貨成本 (NT$)</label>
-                                <input type="number" id="add-cost" placeholder="4500" class="w-full border rounded-lg p-2 text-sm bg-white">
-                            </div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">💵 參考前價與日期</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-500 mb-1">參考前價 (NT$)</label>
                                 <input type="number" id="add-price" placeholder="6800" class="w-full border rounded-lg p-2 text-sm bg-white">
@@ -264,6 +269,17 @@
                         <input type="file" id="add-images" accept="image/*" multiple onchange="previewImages(event, 'add-preview-container')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                         <div id="add-preview-container" class="flex gap-2 mt-3 overflow-x-auto"></div>
                     </div>
+                </div>
+
+                <!-- 獨立多廠商資料區 (新增) -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h2 class="font-bold text-sm text-slate-700">🏭 進貨廠商與成本資料 (可新增多家)</h2>
+                        <button type="button" onclick="addSupplierRow('add-suppliers-container', 'add')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-lg border border-blue-200 transition">
+                            ➕ 新增進貨廠商
+                        </button>
+                    </div>
+                    <div id="add-suppliers-container" class="space-y-3"></div>
                 </div>
 
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
@@ -295,7 +311,7 @@
             <form id="edit-part-form" onsubmit="handleSaveEdit(event)" class="space-y-4">
                 <input type="hidden" id="edit-id">
                 <div class="space-y-3">
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-3 gap-2">
                         <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">零件名稱 *</label>
                             <input type="text" id="edit-part-name" list="part-name-list" required 
@@ -311,6 +327,10 @@
                                    onfocus="showSuggestions('edit-brand-name', 'part-brand-list', 'edit-pbrand-suggestions')"
                                    class="w-full border rounded-lg p-2 text-sm bg-white">
                             <div id="edit-pbrand-suggestions" class="suggestions-dropdown hidden"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">產地</label>
+                            <input type="text" id="edit-origin" class="w-full border rounded-lg p-2 text-sm bg-white">
                         </div>
                     </div>
 
@@ -344,6 +364,21 @@
                         </div>
                     </div>
 
+                    <!-- 編輯區冷氣容量規範 -->
+                    <div class="bg-blue-50/70 p-2.5 rounded-lg border border-blue-200">
+                        <label class="block text-xs font-bold text-blue-900 mb-1">❄️ 冷氣系統容量規範</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-600 mb-1">冷凍油量</label>
+                                <input type="text" id="edit-oil-capacity" class="w-full border rounded-lg p-1.5 text-sm bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-600 mb-1">冷媒量</label>
+                                <input type="text" id="edit-refrigerant-capacity" class="w-full border rounded-lg p-1.5 text-sm bg-white">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-indigo-50/70 p-2.5 rounded-lg border border-indigo-200">
                         <label class="block text-xs font-bold text-indigo-900 mb-1">🔗 可替料號 (Cross Reference)</label>
                         <textarea id="edit-cross-ref" rows="2" class="w-full border rounded-lg p-2 text-sm font-mono bg-white"></textarea>
@@ -354,28 +389,14 @@
                         <textarea id="edit-kit-parts" rows="2" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white" placeholder="例: 膨脹閥 [V-101], 墊片 [GASKET-01]"></textarea>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="relative">
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商</label>
-                            <input type="text" id="edit-supplier-name" list="supplier-list" 
-                                   oninput="showSuggestions('edit-supplier-name', 'supplier-list', 'edit-supplier-suggestions')"
-                                   onfocus="showSuggestions('edit-supplier-name', 'supplier-list', 'edit-supplier-suggestions')"
-                                   class="w-full border rounded-lg p-2 text-sm bg-white">
-                            <div id="edit-supplier-suggestions" class="suggestions-dropdown hidden"></div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">備註說明</label>
-                            <input type="text" id="edit-remarks" class="w-full border rounded-lg p-2 text-sm bg-white">
-                        </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">零件主檔備註說明 (獨立)</label>
+                        <input type="text" id="edit-remarks" class="w-full border rounded-lg p-2 text-sm bg-white">
                     </div>
 
                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
-                        <label class="block text-xs font-bold text-slate-700">💵 價格與成本</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-1">進貨成本</label>
-                                <input type="number" id="edit-cost" class="w-full border rounded-lg p-1.5 text-sm bg-white">
-                            </div>
+                        <label class="block text-xs font-bold text-slate-700">💵 參考前價與日期</label>
+                        <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-1">參考前價</label>
                                 <input type="number" id="edit-price" class="w-full border rounded-lg p-1.5 text-sm bg-white">
@@ -393,6 +414,17 @@
                         <div id="edit-preview-container" class="flex gap-2 mb-3 overflow-x-auto items-center"></div>
                         <input type="file" id="edit-images" accept="image/*" multiple onchange="previewNewEditImages(event)" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                     </div>
+                </div>
+
+                <!-- 編輯區多廠商資料 -->
+                <div class="space-y-3 border-t pt-3">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">🏭 進貨廠商與成本資料</h4>
+                        <button type="button" onclick="addSupplierRow('edit-suppliers-container', 'edit')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-2.5 py-1 rounded border border-blue-200 transition">
+                            ➕ 新增進貨廠商
+                        </button>
+                    </div>
+                    <div id="edit-suppliers-container" class="space-y-3"></div>
                 </div>
 
                 <div class="space-y-3 border-t pt-3">
@@ -433,6 +465,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await initHistoryDatalists();
             addVehicleRow('add-vehicles-container', 'add');
+            addSupplierRow('add-suppliers-container', 'add');
 
             // 點擊頁面其他地方時隱藏所有的自訂下拉建議選單
             document.addEventListener('click', (e) => {
@@ -442,7 +475,7 @@
             });
         });
 
-        // 🚀 行動版通用的自訂懸浮建議選單機制（解決手機 datalist 不彈出問題）
+        // 🚀 行動版通用的自訂懸浮建議選單機制
         function showSuggestions(inputId, datalistId, dropdownId) {
             const input = document.getElementById(inputId);
             const datalist = document.getElementById(datalistId);
@@ -470,7 +503,6 @@
             const input = document.getElementById(inputId);
             if (input) {
                 input.value = value;
-                // 觸發 input 事件以同步對應聯動函數
                 const event = new Event('input', { bubbles: true });
                 input.dispatchEvent(event);
             }
@@ -482,15 +514,19 @@
 
         async function initHistoryDatalists() {
             try {
-                const { data: parts } = await _supabase.from('parts').select('part_name, brand_name, supplier_name');
+                const { data: parts } = await _supabase.from('parts').select('part_name, brand_name');
+                const { data: suppliersData } = await _supabase.from('part_suppliers').select('supplier_name');
+
                 if (parts) {
                     allPartNamesCache = [...new Set(parts.map(p => p.part_name ? p.part_name.trim() : '').filter(Boolean))];
                     const brands = [...new Set(parts.map(p => p.brand_name ? p.brand_name.trim() : '').filter(Boolean))];
-                    const suppliers = [...new Set(parts.map(p => p.supplier_name ? p.supplier_name.trim() : '').filter(Boolean))];
-
                     renderPartChipsUI();
                     document.getElementById('part-name-list').innerHTML = allPartNamesCache.map(n => `<option value="${n}">`).join('');
                     document.getElementById('part-brand-list').innerHTML = brands.map(b => `<option value="${b}">`).join('');
+                }
+
+                if (suppliersData) {
+                    const suppliers = [...new Set(suppliersData.map(s => s.supplier_name ? s.supplier_name.trim() : '').filter(Boolean))];
                     document.getElementById('supplier-list').innerHTML = suppliers.map(s => `<option value="${s}">`).join('');
                 }
 
@@ -503,16 +539,6 @@
                     document.getElementById('vehicle-type-list').innerHTML = customTypes.map(t => `<option value="${t}">`).join('');
                     document.getElementById('brand-list').innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
                     updateModelDatalist();
-                    
-                    // 同步更新現有車型列中的品牌 datalist
-                    document.querySelectorAll('datalist[id^="brand-list-dynamic"]').forEach(dl => {
-                        dl.innerHTML = vBrands.map(b => `<option value="${b}">`).join('');
-                    });
-                    // 同步更新現有車型列中的車型 datalist
-                    document.querySelectorAll('datalist[id^="model-list-dynamic"]').forEach(dl => {
-                        const models = [...new Set(vehicles.map(v => v.model ? v.model.trim() : '').filter(Boolean))];
-                        dl.innerHTML = models.map(m => `<option value="${m}">`).join('');
-                    });
                 }
             } catch (e) { console.warn(e); }
         }
@@ -632,6 +658,7 @@
             if (!confirm(`⚠️ 確定要刪除零件【${partName}】嗎？`)) return;
             try {
                 await _supabase.from('part_vehicles').delete().eq('part_id', id);
+                await _supabase.from('part_suppliers').delete().eq('part_id', id);
                 await _supabase.from('parts').delete().eq('id', id);
                 alert('🗑️ 零件已刪除！');
                 initHistoryDatalists();
@@ -656,6 +683,7 @@
             try {
                 const idsToDelete = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
                 await _supabase.from('part_vehicles').delete().in('part_id', idsToDelete);
+                await _supabase.from('part_suppliers').delete().in('part_id', idsToDelete);
                 const { error } = await _supabase.from('parts').delete().in('id', idsToDelete);
                 if (error) throw error;
 
@@ -741,6 +769,77 @@
             currentResultsCache = [];
         }
 
+        // ================= 多廠商動態列管理 =================
+        function createSupplierRowHTML(prefix, s = {}) {
+            const uniqueId = Math.random().toString(36).substring(2, 9);
+            const supplierDatalistId = `supplier-list`;
+            const supplierDropdownId = `supplier-dropdown-${uniqueId}`;
+
+            return `
+                <div id="supplier-row-${uniqueId}" class="supplier-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
+                    <button type="button" onclick="removeSupplierRow(this)" class="absolute top-2 right-2 text-red-500 text-xs font-bold px-2 py-1">🗑️ 刪除</button>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-12">
+                        <div class="relative">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商 *</label>
+                            <input type="text" id="${prefix}-sup-name-${uniqueId}" class="${prefix}-sup-name w-full border rounded-lg p-2 text-sm bg-white" list="${supplierDatalistId}" required value="${s.supplier_name || ''}"
+                                   oninput="showSuggestions('${prefix}-sup-name-${uniqueId}', '${supplierDatalistId}', '${supplierDropdownId}')"
+                                   onfocus="showSuggestions('${prefix}-sup-name-${uniqueId}', '${supplierDatalistId}', '${supplierDropdownId}')">
+                            <div id="${supplierDropdownId}" class="suggestions-dropdown hidden"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨成本 (NT$) *</label>
+                            <input type="number" class="${prefix}-sup-cost w-full border rounded-lg p-2 text-sm bg-white" required value="${s.cost !== undefined && s.cost !== null ? s.cost : ''}" placeholder="4500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">廠商備註</label>
+                            <input type="text" class="${prefix}-sup-remarks w-full border rounded-lg p-2 text-sm bg-white" value="${s.remarks || ''}" placeholder="例: 含運 / 現金價">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addSupplierRow(containerId, prefix, sData = {}) {
+            const container = document.getElementById(containerId);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = createSupplierRowHTML(prefix, sData);
+            container.appendChild(wrapper.firstElementChild);
+        }
+
+        function removeSupplierRow(btn) {
+            const container = btn.closest('.supplier-row').parentElement;
+            if (container.querySelectorAll('.supplier-row').length <= 1) {
+                alert('⚠️ 至少須保留一筆進貨廠商資料！');
+                return;
+            }
+            btn.closest('.supplier-row').remove();
+        }
+
+        async function saveSuppliers(partId, containerId, prefix) {
+            const rows = document.getElementById(containerId).querySelectorAll('.supplier-row');
+            const supplierPayloads = [];
+            for (const row of rows) {
+                const supplier_name = row.querySelector(`.${prefix}-sup-name`).value.trim();
+                const costStr = row.querySelector(`.${prefix}-sup-cost`).value;
+                const remarks = row.querySelector(`.${prefix}-sup-remarks`).value.trim();
+
+                if (!supplier_name) continue;
+                const cost = costStr !== '' ? parseFloat(costStr) : null;
+
+                supplierPayloads.push({
+                    part_id: partId,
+                    supplier_name,
+                    cost,
+                    remarks: remarks || null
+                });
+            }
+            await _supabase.from('part_suppliers').delete().eq('part_id', partId);
+            if (supplierPayloads.length > 0) {
+                await _supabase.from('part_suppliers').insert(supplierPayloads);
+            }
+        }
+
+        // ================= 車型動態列管理 =================
         function createVehicleRowHTML(prefix, v = {}) {
             const uniqueId = Math.random().toString(36).substring(2, 9);
             const brandDatalistId = `brand-list-dynamic-${uniqueId}`;
@@ -809,14 +908,13 @@
             `;
         }
 
-        // 當動態新增/編輯列的品牌改變時，即時過濾並更新對應的車種 datalist
         function handleDynamicBrandInput(brandInputEl, modelDatalistId) {
             const brandVal = brandInputEl.value.trim();
             const rowEl = brandInputEl.closest('.vehicle-row');
             if (!rowEl) return;
             const modelInputEl = rowEl.querySelector('input[class*="-v-model"]');
             if (modelInputEl) {
-                modelInputEl.value = ''; // 品牌改變時清空原先填寫的車型
+                modelInputEl.value = '';
             }
             updateDynamicModelList(modelInputEl, brandVal, modelDatalistId);
         }
@@ -1039,8 +1137,9 @@
             document.getElementById('select-all-checkbox').checked = false;
 
             const { data: allData, error } = await _supabase.from('parts').select(`
-                id, part_name, brand_name, part_number, oem_number, cross_reference, kit_parts, price, price_date, cost, supplier_name, remarks, length, width, height, image_1, image_2, image_3,
-                part_vehicles ( vehicles ( vehicle_type, brand, model, start_year, start_month, end_year, end_month ) )
+                id, part_name, brand_name, part_number, oem_number, cross_reference, kit_parts, price, price_date, remarks, length, width, height, origin, oil_capacity, refrigerant_capacity, image_1, image_2, image_3,
+                part_vehicles ( vehicles ( vehicle_type, brand, model, start_year, start_month, end_year, end_month ) ),
+                part_suppliers ( id, supplier_name, cost, remarks )
             `);
 
             if (error) { resultsContainer.innerHTML = `<p class="text-red-500 text-sm text-center">❌ ${error.message}</p>`; return; }
@@ -1059,9 +1158,10 @@
                     const crossRef = item.cross_reference ? item.cross_reference.toLowerCase() : '';
                     const pName = item.part_name ? item.part_name.toLowerCase() : '';
                     const remarks = item.remarks ? item.remarks.toLowerCase() : '';
+                    const origin = item.origin ? item.origin.toLowerCase() : '';
 
                     const isPartNumberMatch = pNum.includes(kw) || oemNum.includes(kw) || crossRef.includes(kw);
-                    const isTextMatch = pName.includes(kw) || remarks.includes(kw);
+                    const isTextMatch = pName.includes(kw) || remarks.includes(kw) || origin.includes(kw);
 
                     matchKeyword = isPartNumberMatch || isTextMatch;
                 }
@@ -1095,6 +1195,13 @@
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
                 const currentPN = item.part_number ? item.part_number.trim().toUpperCase() : '';
 
+                // 廠商依成本由低到高排序
+                const suppliers = item.part_suppliers ? [...item.part_suppliers].sort((a, b) => {
+                    const costA = a.cost !== null && a.cost !== undefined ? a.cost : Infinity;
+                    const costB = b.cost !== null && b.cost !== undefined ? b.cost : Infinity;
+                    return costA - costB;
+                }) : [];
+
                 const reverseLinkedParts = allData.filter(p => {
                     if (p.id === item.id || !p.kit_parts) return false;
                     const kitText = p.kit_parts.toUpperCase();
@@ -1109,14 +1216,15 @@
 
                         <div class="flex justify-between items-start pl-7">
                             <div>
-                                <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">${item.brand_name || '通用'}</span>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800">${item.brand_name || '通用'}</span>
+                                    ${item.origin ? `<span class="px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-700 border">產地: ${item.origin}</span>` : ''}
+                                </div>
                                 <h3 class="text-base font-bold text-slate-800 mt-1">${item.part_name}</h3>
                             </div>
                             <div class="text-right">
                                 <span class="text-base font-extrabold text-emerald-600 block">${item.price ? 'NT$ ' + Number(item.price).toLocaleString() : '未報價'}</span>
                                 ${item.price_date ? `<span class="text-[11px] text-slate-500 block">📅 前價日期：${item.price_date}</span>` : ''}
-                                ${item.cost ? `<span class="text-[11px] text-slate-600 block">💵 成本：NT$ ${Number(item.cost).toLocaleString()}</span>` : ''}
-                                ${item.supplier_name ? `<span class="text-[11px] text-indigo-700 block">🏭 廠商：${item.supplier_name}</span>` : ''}
                                 <div class="flex gap-1 justify-end mt-2">
                                     <button onclick="openEditModalById(${item.id})" class="text-xs bg-slate-100 text-blue-600 px-2 py-1 rounded border">✏️ 編輯</button>
                                     <button onclick="deletePartById(${item.id}, '${item.part_name}')" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded border">🗑️ 刪除</button>
@@ -1144,9 +1252,32 @@
                                     <div class="text-slate-600 border-t pt-1.5 mt-1">
                                         📏 尺寸：${item.length ? `長: ${item.length} ` : ''}${item.width ? `寬: ${item.width} ` : ''}${item.height ? `高: ${item.height}` : ''}
                                     </div>` : ''}
+                                ${(item.oil_capacity || item.refrigerant_capacity) ? `
+                                    <div class="text-blue-800 border-t pt-1.5 mt-1 font-semibold">
+                                        ❄️ 冷氣規格：${item.oil_capacity ? `冷凍油: ${item.oil_capacity} ` : ''}${item.refrigerant_capacity ? `冷媒: ${item.refrigerant_capacity}` : ''}
+                                    </div>` : ''}
+                                
+                                <!-- 多廠商與成本列表 (由低到高排序) -->
+                                <div class="border-t pt-1.5 mt-1">
+                                    <span class="font-bold text-slate-700 block mb-1">🏭 進貨廠商與成本 (低至高)：</span>
+                                    ${suppliers.length > 0 ? `
+                                        <div class="space-y-1">
+                                            ${suppliers.map(sup => `
+                                                <div class="bg-white p-1.5 rounded border flex items-center justify-between">
+                                                    <div>
+                                                        <span class="font-bold text-indigo-700">${sup.supplier_name}</span>
+                                                        ${sup.remarks ? `<span class="text-[10px] text-slate-500 ml-1">(${sup.remarks})</span>` : ''}
+                                                    </div>
+                                                    <span class="font-extrabold text-slate-800">${sup.cost !== null ? 'NT$ ' + Number(sup.cost).toLocaleString() : '未填成本'}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : '<span class="text-slate-400">尚無廠商資料</span>'}
+                                </div>
+
                                 ${item.remarks ? `
                                     <div class="text-slate-700 border-t pt-1.5 mt-1">
-                                        <span class="font-bold">📝 備註：</span>${item.remarks}
+                                        <span class="font-bold">📝 零件主檔備註：</span>${item.remarks}
                                     </div>` : ''}
                             </div>
 
@@ -1207,21 +1338,22 @@
             resultsContainer.innerHTML = cards;
         }
 
-        function openEditModalById(id) {
+        async function openEditModalById(id) {
             const item = currentResultsCache.find(p => p.id === id);
             if (!item) return;
             document.getElementById('edit-id').value = item.id;
             document.getElementById('edit-part-name').value = item.part_name || '';
             document.getElementById('edit-brand-name').value = item.brand_name || '';
+            document.getElementById('edit-origin').value = item.origin || '';
             document.getElementById('edit-part-number').value = item.part_number || '';
             document.getElementById('edit-oem-number').value = item.oem_number || '';
             document.getElementById('edit-length').value = item.length || '';
             document.getElementById('edit-width').value = item.width || '';
             document.getElementById('edit-height').value = item.height || '';
+            document.getElementById('edit-oil-capacity').value = item.oil_capacity || '';
+            document.getElementById('edit-refrigerant-capacity').value = item.refrigerant_capacity || '';
             document.getElementById('edit-cross-ref').value = item.cross_reference || '';
             document.getElementById('edit-kit-parts').value = item.kit_parts || '';
-            document.getElementById('edit-supplier-name').value = item.supplier_name || '';
-            document.getElementById('edit-cost').value = item.cost || '';
             document.getElementById('edit-price').value = item.price || '';
             document.getElementById('edit-price-date').value = item.price_date || '';
             document.getElementById('edit-remarks').value = item.remarks || '';
@@ -1230,6 +1362,16 @@
             editNewFiles = [];
             renderEditImagesPreview();
             document.getElementById('edit-images').value = '';
+
+            // 填入廠商資料
+            const editSuppliersContainer = document.getElementById('edit-suppliers-container');
+            editSuppliersContainer.innerHTML = '';
+            const suppliers = item.part_suppliers || [];
+            if (suppliers.length) {
+                suppliers.forEach(s => addSupplierRow('edit-suppliers-container', 'edit', s));
+            } else {
+                addSupplierRow('edit-suppliers-container', 'edit');
+            }
 
             const editVehicles = document.getElementById('edit-vehicles-container');
             editVehicles.innerHTML = '';
@@ -1258,15 +1400,16 @@
             const updatePayload = {
                 part_name: document.getElementById('edit-part-name').value.trim(),
                 brand_name: document.getElementById('edit-brand-name').value.trim(),
+                origin: document.getElementById('edit-origin').value.trim() || null,
                 part_number: partNum,
                 oem_number: document.getElementById('edit-oem-number').value.trim() || null,
                 length: document.getElementById('edit-length').value.trim() || null,
                 width: document.getElementById('edit-width').value.trim() || null,
                 height: document.getElementById('edit-height').value.trim() || null,
+                oil_capacity: document.getElementById('edit-oil-capacity').value.trim() || null,
+                refrigerant_capacity: document.getElementById('edit-refrigerant-capacity').value.trim() || null,
                 cross_reference: crossRefText || null,
                 kit_parts: document.getElementById('edit-kit-parts').value.trim() || null,
-                supplier_name: document.getElementById('edit-supplier-name').value.trim() || null,
-                cost: parseFloat(document.getElementById('edit-cost').value) || null,
                 price: parseFloat(document.getElementById('edit-price').value) || null,
                 price_date: document.getElementById('edit-price-date').value || null,
                 remarks: document.getElementById('edit-remarks').value.trim() || null,
@@ -1277,6 +1420,7 @@
 
             await _supabase.from('parts').update(updatePayload).eq('id', id);
             await syncCrossReferences(partNum, crossRefText);
+            await saveSuppliers(id, 'edit-suppliers-container', 'edit');
 
             const vehicleIds = await getOrCreateVehicleIds('edit-vehicles-container', 'edit');
             await _supabase.from('part_vehicles').delete().eq('part_id', id);
@@ -1298,15 +1442,16 @@
             const partPayload = {
                 part_name: document.getElementById('add-part-name').value.trim(),
                 brand_name: document.getElementById('add-brand-name').value.trim(),
+                origin: document.getElementById('add-origin').value.trim() || null,
                 part_number: partNum,
                 oem_number: document.getElementById('add-oem-number').value.trim() || null,
                 length: document.getElementById('add-length').value.trim() || null,
                 width: document.getElementById('add-width').value.trim() || null,
                 height: document.getElementById('add-height').value.trim() || null,
+                oil_capacity: document.getElementById('add-oil-capacity').value.trim() || null,
+                refrigerant_capacity: document.getElementById('add-refrigerant-capacity').value.trim() || null,
                 cross_reference: crossRefText || null,
                 kit_parts: document.getElementById('add-kit-parts').value.trim() || null,
-                supplier_name: document.getElementById('add-supplier-name').value.trim() || null,
-                cost: parseFloat(document.getElementById('add-cost').value) || null,
                 price: parseFloat(document.getElementById('add-price').value) || null,
                 price_date: document.getElementById('add-price-date').value || null,
                 remarks: document.getElementById('add-remarks').value.trim() || null
@@ -1321,6 +1466,8 @@
             await syncCrossReferences(partNum, crossRefText);
 
             const newPartId = partData[0].id;
+            await saveSuppliers(newPartId, 'add-suppliers-container', 'add');
+
             const vehicleIds = await getOrCreateVehicleIds('add-vehicles-container', 'add');
             if (vehicleIds.length) {
                 await _supabase.from('part_vehicles').insert(vehicleIds.map(vId => ({ part_id: newPartId, vehicle_id: vId })));
@@ -1329,6 +1476,11 @@
             alert('✅ 新增成功！');
             document.getElementById('add-part-form').reset();
             document.getElementById('add-preview-container').innerHTML = '';
+            document.getElementById('add-suppliers-container').innerHTML = '';
+            addSupplierRow('add-suppliers-container', 'add');
+            document.getElementById('add-vehicles-container').innerHTML = '';
+            addVehicleRow('add-vehicles-container', 'add');
+
             initHistoryDatalists();
             switchTab('search');
             searchParts();
