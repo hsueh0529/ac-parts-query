@@ -117,7 +117,7 @@
 
                 <!-- 料號與關聯對照關鍵字 -->
                 <div class="md:col-span-6 border-t pt-2 mt-1">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">🔍 本廠 / OEM / 可替料號 / 配套零件關鍵字搜尋</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">🔍 本廠 / OEM / 廠商料號 / 可替料號 / 配套零件關鍵字搜尋</label>
                     <input type="text" id="search-keyword" placeholder="輸入料號例: DCP05001 / 2477 / 膨脹閥 (按 Enter 可直接查詢)" onkeydown="if(event.key==='Enter') searchParts()" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                 </div>
             </div>
@@ -271,10 +271,10 @@
                     </div>
                 </div>
 
-                <!-- 獨立多廠商資料區 (新增) -->
+                <!-- 獨立多廠商資料區 (非必填、含廠商料號) -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                     <div class="flex justify-between items-center border-b pb-2">
-                        <h2 class="font-bold text-sm text-slate-700">🏭 進貨廠商與成本資料 (可新增多家)</h2>
+                        <h2 class="font-bold text-sm text-slate-700">🏭 進貨廠商、廠商料號與成本 (可新增多家，皆非必填)</h2>
                         <button type="button" onclick="addSupplierRow('add-suppliers-container', 'add')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-lg border border-blue-200 transition">
                             ➕ 新增進貨廠商
                         </button>
@@ -419,7 +419,7 @@
                 <!-- 編輯區多廠商資料 -->
                 <div class="space-y-3 border-t pt-3">
                     <div class="flex justify-between items-center">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">🏭 進貨廠商與成本資料</h4>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">🏭 進貨廠商、廠商料號與成本</h4>
                         <button type="button" onclick="addSupplierRow('edit-suppliers-container', 'edit')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-2.5 py-1 rounded border border-blue-200 transition">
                             ➕ 新增進貨廠商
                         </button>
@@ -769,7 +769,7 @@
             currentResultsCache = [];
         }
 
-        // ================= 多廠商動態列管理 =================
+        // ================= 多廠商動態列管理 (非必填、含廠商料號) =================
         function createSupplierRowHTML(prefix, s = {}) {
             const uniqueId = Math.random().toString(36).substring(2, 9);
             const supplierDatalistId = `supplier-list`;
@@ -778,17 +778,21 @@
             return `
                 <div id="supplier-row-${uniqueId}" class="supplier-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
                     <button type="button" onclick="removeSupplierRow(this)" class="absolute top-2 right-2 text-red-500 text-xs font-bold px-2 py-1">🗑️ 刪除</button>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-12">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 pr-12">
                         <div class="relative">
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商 *</label>
-                            <input type="text" id="${prefix}-sup-name-${uniqueId}" class="${prefix}-sup-name w-full border rounded-lg p-2 text-sm bg-white" list="${supplierDatalistId}" required value="${s.supplier_name || ''}"
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨廠商 (選填)</label>
+                            <input type="text" id="${prefix}-sup-name-${uniqueId}" class="${prefix}-sup-name w-full border rounded-lg p-2 text-sm bg-white" list="${supplierDatalistId}" value="${s.supplier_name || ''}"
                                    oninput="showSuggestions('${prefix}-sup-name-${uniqueId}', '${supplierDatalistId}', '${supplierDropdownId}')"
-                                   onfocus="showSuggestions('${prefix}-sup-name-${uniqueId}', '${supplierDatalistId}', '${supplierDropdownId}')">
+                                   onfocus="showSuggestions('${prefix}-sup-name-${uniqueId}', '${supplierDatalistId}', '${supplierDropdownId}')" placeholder="例: A供應商">
                             <div id="${supplierDropdownId}" class="suggestions-dropdown hidden"></div>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨成本 (NT$) *</label>
-                            <input type="number" class="${prefix}-sup-cost w-full border rounded-lg p-2 text-sm bg-white" required value="${s.cost !== undefined && s.cost !== null ? s.cost : ''}" placeholder="4500">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">廠商料號 (選填)</label>
+                            <input type="text" class="${prefix}-sup-partnum w-full border rounded-lg p-2 text-sm font-mono bg-white" value="${s.supplier_part_number || ''}" placeholder="例: SUP-12345">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">進貨成本 (NT$) (選填)</label>
+                            <input type="number" class="${prefix}-sup-cost w-full border rounded-lg p-2 text-sm bg-white" value="${s.cost !== undefined && s.cost !== null ? s.cost : ''}" placeholder="4500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">廠商備註</label>
@@ -809,7 +813,9 @@
         function removeSupplierRow(btn) {
             const container = btn.closest('.supplier-row').parentElement;
             if (container.querySelectorAll('.supplier-row').length <= 1) {
-                alert('⚠️ 至少須保留一筆進貨廠商資料！');
+                // 如果刪到剩最後一列，直接清空欄位即可，不強制阻擋，因為改為非必填
+                const row = btn.closest('.supplier-row');
+                row.querySelectorAll('input').forEach(input => input.value = '');
                 return;
             }
             btn.closest('.supplier-row').remove();
@@ -820,15 +826,19 @@
             const supplierPayloads = [];
             for (const row of rows) {
                 const supplier_name = row.querySelector(`.${prefix}-sup-name`).value.trim();
+                const supplier_part_number = row.querySelector(`.${prefix}-sup-partnum`).value.trim();
                 const costStr = row.querySelector(`.${prefix}-sup-cost`).value;
                 const remarks = row.querySelector(`.${prefix}-sup-remarks`).value.trim();
 
-                if (!supplier_name) continue;
+                // 若整列完全空白，則略過
+                if (!supplier_name && !supplier_part_number && !costStr && !remarks) continue;
+
                 const cost = costStr !== '' ? parseFloat(costStr) : null;
 
                 supplierPayloads.push({
                     part_id: partId,
-                    supplier_name,
+                    supplier_name: supplier_name || null,
+                    supplier_part_number: supplier_part_number || null,
                     cost,
                     remarks: remarks || null
                 });
@@ -1139,7 +1149,7 @@
             const { data: allData, error } = await _supabase.from('parts').select(`
                 id, part_name, brand_name, part_number, oem_number, cross_reference, kit_parts, price, price_date, remarks, length, width, height, origin, oil_capacity, refrigerant_capacity, image_1, image_2, image_3,
                 part_vehicles ( vehicles ( vehicle_type, brand, model, start_year, start_month, end_year, end_month ) ),
-                part_suppliers ( id, supplier_name, cost, remarks )
+                part_suppliers ( id, supplier_name, supplier_part_number, cost, remarks )
             `);
 
             if (error) { resultsContainer.innerHTML = `<p class="text-red-500 text-sm text-center">❌ ${error.message}</p>`; return; }
@@ -1159,8 +1169,11 @@
                     const pName = item.part_name ? item.part_name.toLowerCase() : '';
                     const remarks = item.remarks ? item.remarks.toLowerCase() : '';
                     const origin = item.origin ? item.origin.toLowerCase() : '';
+                    
+                    // 同時檢查廠商料號是否符合關鍵字搜尋
+                    const supPartNums = item.part_suppliers ? item.part_suppliers.map(s => s.supplier_part_number ? s.supplier_part_number.toLowerCase() : '').join(' ') : '';
 
-                    const isPartNumberMatch = pNum.includes(kw) || oemNum.includes(kw) || crossRef.includes(kw);
+                    const isPartNumberMatch = pNum.includes(kw) || oemNum.includes(kw) || crossRef.includes(kw) || supPartNums.includes(kw);
                     const isTextMatch = pName.includes(kw) || remarks.includes(kw) || origin.includes(kw);
 
                     matchKeyword = isPartNumberMatch || isTextMatch;
@@ -1257,15 +1270,16 @@
                                         ❄️ 冷氣規格：${item.oil_capacity ? `冷凍油: ${item.oil_capacity} ` : ''}${item.refrigerant_capacity ? `冷媒: ${item.refrigerant_capacity}` : ''}
                                     </div>` : ''}
                                 
-                                <!-- 多廠商與成本列表 (由低到高排序) -->
+                                <!-- 多廠商、廠商料號與成本列表 (由低到高排序) -->
                                 <div class="border-t pt-1.5 mt-1">
-                                    <span class="font-bold text-slate-700 block mb-1">🏭 進貨廠商與成本 (低至高)：</span>
+                                    <span class="font-bold text-slate-700 block mb-1">🏭 進貨廠商與叫貨料號 (成本低至高)：</span>
                                     ${suppliers.length > 0 ? `
                                         <div class="space-y-1">
                                             ${suppliers.map(sup => `
-                                                <div class="bg-white p-1.5 rounded border flex items-center justify-between">
+                                                <div class="bg-white p-2 rounded border flex items-center justify-between">
                                                     <div>
-                                                        <span class="font-bold text-indigo-700">${sup.supplier_name}</span>
+                                                        <span class="font-bold text-indigo-700">${sup.supplier_name || '未指定廠商'}</span>
+                                                        ${sup.supplier_part_number ? `<span class="font-mono text-xs text-blue-900 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 ml-1">料號: ${sup.supplier_part_number}</span>` : ''}
                                                         ${sup.remarks ? `<span class="text-[10px] text-slate-500 ml-1">(${sup.remarks})</span>` : ''}
                                                     </div>
                                                     <span class="font-extrabold text-slate-800">${sup.cost !== null ? 'NT$ ' + Number(sup.cost).toLocaleString() : '未填成本'}</span>
