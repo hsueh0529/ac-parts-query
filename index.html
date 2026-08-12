@@ -713,7 +713,9 @@
                 const firstItem = currentResultsCache[0];
                 const vehicles = firstItem.part_vehicles ? firstItem.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 if (vehicles.length > 0) {
-                    vehicleHeader = `${vehicles[0].brand || ''} ${vehicles[0].model || ''} ${vehicles[0].start_year || ''}`.trim();
+                    const v = vehicles[0];
+                    const ccText = v.cc ? ` (${v.cc})` : '';
+                    vehicleHeader = `${v.brand || ''} ${v.model || ''}${ccText} ${v.start_year || ''}`.trim();
                 }
             }
 
@@ -913,7 +915,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label><input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm bg-white" required value="${v.start_year || ''}"></div>
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label><input type="number" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.start_month || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 (選填)</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm bg-white" value="${v.end_year || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 (選填)</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm bg-white" value="${v.end_year !== null && v.end_year !== undefined ? v.end_year : ''}"></div>
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label><input type="number" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.end_month || ''}"></div>
                     </div>
                 </div>
@@ -957,11 +959,16 @@
             btn.closest('.vehicle-row').remove();
         }
 
+        // 💡 修正：改用前端比對與快取查詢，完美解決未輸入結束年份時無法正確建立或搜尋關聯的問題
         async function getOrCreateVehicleIds(containerId, prefix) {
             const rows = document.getElementById(containerId).querySelectorAll('.vehicle-row');
             const vehicleIds = [];
+            
+            const { data: allVehicles } = await _supabase.from('vehicles').select('*');
+            const vehiclesList = allVehicles || [];
+
             for (const row of rows) {
-                const vehicleType = row.querySelector(`.${prefix}-v-type`).value.trim();
+                const vehicleType = row.querySelector(`.${prefix}-v-type`).value.trim() || null;
                 const brand = row.querySelector(`.${prefix}-v-brand`).value.trim();
                 const model = row.querySelector(`.${prefix}-v-model`).value.trim();
                 const cc = row.querySelector(`.${prefix}-v-cc`).value.trim() || null;
@@ -973,25 +980,35 @@
 
                 if (!brand || !model || isNaN(startYear)) continue;
 
-                let q = _supabase.from('vehicles').select('id').eq('brand', brand).eq('model', model).eq('start_year', startYear);
-                if (vehicleType) q = q.eq('vehicle_type', vehicleType);
-                else q = q.is('vehicle_type', null);
-                if (cc) q = q.eq('cc', cc);
-                else q = q.is('cc', null);
-                if (startMonth) q = q.eq('start_month', startMonth);
-                else q = q.is('start_month', null);
-                if (endYear) q = q.eq('end_year', endYear);
-                else q = q.is('end_year', null);
-                if (endMonth) q = q.eq('end_month', endMonth);
-                else q = q.is('end_month', null);
-
-                const { data: existing } = await q.maybeSingle();
+                const existing = vehiclesList.find(v => 
+                    v.brand === brand &&
+                    v.model === model &&
+                    v.start_year === startYear &&
+                    (v.vehicle_type || null) === vehicleType &&
+                    (v.cc || null) === cc &&
+                    (v.start_month || null) === startMonth &&
+                    (v.end_year || null) === endYear &&
+                    (v.end_month || null) === endMonth
+                );
 
                 if (existing) {
                     vehicleIds.push(existing.id);
                 } else {
-                    const { data: newV } = await _supabase.from('vehicles').insert([{ vehicle_type: vehicleType, brand, model, cc, start_year: startYear, start_month: startMonth, end_year: endYear, end_month: endMonth }]).select();
-                    if (newV && newV.length > 0) vehicleIds.push(newV[0].id);
+                    const { data: newV, error } = await _supabase.from('vehicles').insert([{ 
+                        vehicle_type: vehicleType, 
+                        brand, 
+                        model, 
+                        cc, 
+                        start_year: startYear, 
+                        start_month: startMonth, 
+                        end_year: endYear, 
+                        end_month: endMonth 
+                    }]).select();
+
+                    if (!error && newV && newV.length > 0) {
+                        vehicleIds.push(newV[0].id);
+                        vehiclesList.push(newV[0]);
+                    }
                 }
             }
             return [...new Set(vehicleIds)];
@@ -1343,6 +1360,7 @@
                                 ${vehicles.map(v => {
                                     const startStr = v.start_month ? `${v.start_year}/${v.start_month}` : `${v.start_year}`;
                                     const endStr = v.end_year ? (v.end_month ? `${v.end_year}/${v.end_month}` : `${v.end_year}`) : '現今';
+                                    // 💡 將 CC 數移至車名（車型/底盤）右側顯示
                                     const ccStr = v.cc ? ` (${v.cc})` : '';
                                     return `
                                         <span onclick="jumpToVehicleFilter('${v.brand}', '${v.model}', '${v.vehicle_type || ''}')" 
