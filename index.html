@@ -959,7 +959,6 @@
             btn.closest('.vehicle-row').remove();
         }
 
-        // 💡 修正：改用前端比對與快取查詢，完美解決未輸入結束年份時無法正確建立或搜尋關聯的問題
         async function getOrCreateVehicleIds(containerId, prefix) {
             const rows = document.getElementById(containerId).querySelectorAll('.vehicle-row');
             const vehicleIds = [];
@@ -1210,6 +1209,7 @@
                         return (!searchVType || (v.vehicle_type && v.vehicle_type.toLowerCase().includes(searchVType))) &&
                                (!searchBrand || (v.brand && v.brand.toLowerCase().includes(searchBrand))) &&
                                (!searchModel || (v.model && v.model.toLowerCase().includes(searchModel))) &&
+                               // 💡 修正處：當使用者有指定搜尋年份時，若車型資料的結束年份為空/null，則視為現今適用（即 year >= start_year 即可成立）
                                (isNaN(year) || (year >= v.start_year && (!v.end_year || year <= v.end_year)));
                     });
                 }
@@ -1360,7 +1360,6 @@
                                 ${vehicles.map(v => {
                                     const startStr = v.start_month ? `${v.start_year}/${v.start_month}` : `${v.start_year}`;
                                     const endStr = v.end_year ? (v.end_month ? `${v.end_year}/${v.end_month}` : `${v.end_year}`) : '現今';
-                                    // 💡 將 CC 數移至車名（車型/底盤）右側顯示
                                     const ccStr = v.cc ? ` (${v.cc})` : '';
                                     return `
                                         <span onclick="jumpToVehicleFilter('${v.brand}', '${v.model}', '${v.vehicle_type || ''}')" 
