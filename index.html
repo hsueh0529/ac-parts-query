@@ -907,7 +907,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">CC 數 (選填)</label>
-                            <input type="text" class="${prefix}-v-cc w-full border rounded-lg p-2 text-sm bg-white" value="${v.cc || ''}" placeholder="例: 2000 / 3.0">
+                            <input type="text" class="${prefix}-v-cc w-full border rounded-lg p-2 text-sm bg-white" value="${v.cc || ''}" placeholder="例: 2000 / 2.0">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -976,7 +976,7 @@
                 let q = _supabase.from('vehicles').select('id').eq('brand', brand).eq('model', model).eq('start_year', startYear);
                 if (vehicleType) q = q.eq('vehicle_type', vehicleType);
                 else q = q.is('vehicle_type', null);
-                if (cc) q = q.eq('cc');
+                if (cc) q = q.eq('cc', cc);
                 else q = q.is('cc', null);
                 if (startMonth) q = q.eq('start_month', startMonth);
                 else q = q.is('start_month', null);
@@ -1343,7 +1343,7 @@
                                 ${vehicles.map(v => {
                                     const startStr = v.start_month ? `${v.start_year}/${v.start_month}` : `${v.start_year}`;
                                     const endStr = v.end_year ? (v.end_month ? `${v.end_year}/${v.end_month}` : `${v.end_year}`) : '現今';
-                                    const ccStr = v.cc ? ` (${v.cc}cc)` : '';
+                                    const ccStr = v.cc ? ` (${v.cc})` : '';
                                     return `
                                         <span onclick="jumpToVehicleFilter('${v.brand}', '${v.model}', '${v.vehicle_type || ''}')" 
                                               class="text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2 py-0.5 rounded border cursor-pointer transition flex items-center gap-1">
