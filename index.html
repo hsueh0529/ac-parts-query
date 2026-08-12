@@ -530,7 +530,7 @@
                     document.getElementById('supplier-list').innerHTML = suppliers.map(s => `<option value="${s}">`).join('');
                 }
 
-                const { data: vehicles } = await _supabase.from('vehicles').select('vehicle_type, brand, model');
+                const { data: vehicles } = await _supabase.from('vehicles').select('vehicle_type, brand, model, cc');
                 if (vehicles) {
                     allVehiclesCache = vehicles || [];
                     const customTypes = [...new Set(vehicles.map(v => v.vehicle_type ? v.vehicle_type.trim() : '').filter(Boolean))];
@@ -713,8 +713,6 @@
                 const firstItem = currentResultsCache[0];
                 const vehicles = firstItem.part_vehicles ? firstItem.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 if (vehicles.length > 0) {
-                    const currentYear = new Date().getFullYear();
-                    const vEnd = vehicles[0].end_year !== null && vehicles[0].end_year !== undefined ? vehicles[0].end_year : currentYear;
                     vehicleHeader = `${vehicles[0].brand || ''} ${vehicles[0].model || ''} ${vehicles[0].start_year || ''}`.trim();
                 }
             }
@@ -815,7 +813,6 @@
         function removeSupplierRow(btn) {
             const container = btn.closest('.supplier-row').parentElement;
             if (container.querySelectorAll('.supplier-row').length <= 1) {
-                // 如果刪到剩最後一列，直接清空欄位即可，不強制阻擋，因為改為非必填
                 const row = btn.closest('.supplier-row');
                 row.querySelectorAll('input').forEach(input => input.value = '');
                 return;
@@ -832,7 +829,6 @@
                 const costStr = row.querySelector(`.${prefix}-sup-cost`).value;
                 const remarks = row.querySelector(`.${prefix}-sup-remarks`).value.trim();
 
-                // 若整列完全空白，則略過
                 if (!supplier_name && !supplier_part_number && !costStr && !remarks) continue;
 
                 const cost = costStr !== '' ? parseFloat(costStr) : null;
@@ -885,7 +881,7 @@
             return `
                 <div id="veh-row-${uniqueId}" class="vehicle-row bg-white p-3 rounded-xl border border-slate-200 relative space-y-2 shadow-sm">
                     <button type="button" onclick="removeVehicleRow(this)" class="absolute top-2 right-2 text-red-500 text-xs font-bold px-2 py-1">🗑️ 刪除</button>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-12">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 pr-12">
                         <div class="relative">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">車種類別 *</label>
                             <input type="text" id="${prefix}-v-type-${uniqueId}" class="${prefix}-v-type w-full border rounded-lg p-2 text-sm bg-white" list="${vtypeDatalistId}" required value="${v.vehicle_type || ''}" 
@@ -909,11 +905,15 @@
                             <datalist id="${modelDatalistId}"></datalist>
                             <div id="${modelDropdownId}" class="suggestions-dropdown hidden"></div>
                         </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">CC數 / 排氣量 (選填)</label>
+                            <input type="text" class="${prefix}-v-cc w-full border rounded-lg p-2 text-sm bg-white" value="${v.cc !== undefined && v.cc !== null ? v.cc : ''}" placeholder="例: 2000 或 2.0L">
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label><input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm bg-white" required value="${v.start_year || ''}"></div>
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label><input type="number" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.start_month || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 (選填)</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm bg-white" value="${v.end_year || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 *</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm bg-white" required value="${v.end_year || ''}"></div>
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label><input type="number" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.end_month || ''}"></div>
                     </div>
                 </div>
@@ -964,21 +964,20 @@
                 const vehicleType = row.querySelector(`.${prefix}-v-type`).value.trim();
                 const brand = row.querySelector(`.${prefix}-v-brand`).value.trim();
                 const model = row.querySelector(`.${prefix}-v-model`).value.trim();
+                const cc = row.querySelector(`.${prefix}-v-cc`).value.trim() || null;
                 const startYear = parseInt(row.querySelector(`.${prefix}-v-start`).value);
                 const startMonth = parseInt(row.querySelector(`.${prefix}-v-start-m`).value) || null;
-                const endYearInput = row.querySelector(`.${prefix}-v-end`).value.trim();
-                const endYear = endYearInput !== '' ? parseInt(endYearInput) : null;
+                const endYear = parseInt(row.querySelector(`.${prefix}-v-end`).value);
                 const endMonth = parseInt(row.querySelector(`.${prefix}-v-end-m`).value) || null;
 
-                if (!brand || !model || isNaN(startYear)) continue;
+                if (!brand || !model || isNaN(startYear) || isNaN(endYear)) continue;
 
-                let q = _supabase.from('vehicles').select('id').eq('brand', brand).eq('model', model).eq('start_year', startYear);
+                let q = _supabase.from('vehicles').select('id').eq('brand', brand).eq('model', model).eq('start_year', startYear).eq('end_year', endYear);
                 if (vehicleType) q = q.eq('vehicle_type', vehicleType);
-                else q = q.is('vehicle_type', null);
+                if (cc) q = q.eq('cc', cc);
+                else q = q.is('cc', null);
                 if (startMonth) q = q.eq('start_month', startMonth);
                 else q = q.is('start_month', null);
-                if (endYear !== null) q = q.eq('end_year', endYear);
-                else q = q.is('end_year', null);
                 if (endMonth) q = q.eq('end_month', endMonth);
                 else q = q.is('end_month', null);
 
@@ -987,7 +986,7 @@
                 if (existing) {
                     vehicleIds.push(existing.id);
                 } else {
-                    const { data: newV } = await _supabase.from('vehicles').insert([{ vehicle_type: vehicleType, brand, model, start_year: startYear, start_month: startMonth, end_year: endYear, end_month: endMonth }]).select();
+                    const { data: newV } = await _supabase.from('vehicles').insert([{ vehicle_type: vehicleType, brand, model, cc, start_year: startYear, start_month: startMonth, end_year: endYear, end_month: endMonth }]).select();
                     if (newV && newV.length > 0) vehicleIds.push(newV[0].id);
                 }
             }
@@ -1154,13 +1153,12 @@
 
             const { data: allData, error } = await _supabase.from('parts').select(`
                 id, part_name, brand_name, part_number, oem_number, cross_reference, kit_parts, price, price_date, remarks, length, width, height, origin, oil_capacity, refrigerant_capacity, image_1, image_2, image_3,
-                part_vehicles ( vehicles ( vehicle_type, brand, model, start_year, start_month, end_year, end_month ) ),
+                part_vehicles ( vehicles ( vehicle_type, brand, model, cc, start_year, start_month, end_year, end_month ) ),
                 part_suppliers ( id, supplier_name, supplier_part_number, cost, remarks )
             `);
 
             if (error) { resultsContainer.innerHTML = `<p class="text-red-500 text-sm text-center">❌ ${error.message}</p>`; return; }
 
-            const currentYear = new Date().getFullYear();
             const matchedInitialIds = new Set();
             allData.forEach(item => {
                 const vehicleList = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
@@ -1177,7 +1175,6 @@
                     const remarks = item.remarks ? item.remarks.toLowerCase() : '';
                     const origin = item.origin ? item.origin.toLowerCase() : '';
                     
-                    // 同時檢查廠商料號是否符合關鍵字搜尋
                     const supPartNums = item.part_suppliers ? item.part_suppliers.map(s => s.supplier_part_number ? s.supplier_part_number.toLowerCase() : '').join(' ') : '';
 
                     const isPartNumberMatch = pNum.includes(kw) || oemNum.includes(kw) || crossRef.includes(kw) || supPartNums.includes(kw);
@@ -1189,11 +1186,10 @@
                 let matchVehicle = true;
                 if (searchVType || searchBrand || searchModel || !isNaN(year)) {
                     matchVehicle = vehicleList.some(v => {
-                        const vEndYear = (v.end_year !== null && v.end_year !== undefined) ? v.end_year : currentYear;
                         return (!searchVType || (v.vehicle_type && v.vehicle_type.toLowerCase().includes(searchVType))) &&
                                (!searchBrand || (v.brand && v.brand.toLowerCase().includes(searchBrand))) &&
                                (!searchModel || (v.model && v.model.toLowerCase().includes(searchModel))) &&
-                               (isNaN(year) || (year >= v.start_year && year <= vEndYear));
+                               (isNaN(year) || (year >= v.start_year && year <= v.end_year));
                     });
                 }
 
@@ -1211,15 +1207,11 @@
             const resultsContainer = document.getElementById('results');
             if (list.length === 0) { resultsContainer.innerHTML = `<p class="text-amber-600 text-sm text-center py-6 bg-amber-50 rounded-xl">查無符合條件的零件。</p>`; return; }
 
-            const currentYear = new Date().getFullYear();
-            const currentMonth = new Date().getMonth() + 1;
-
             const cards = list.map(item => {
                 const vehicles = item.part_vehicles ? item.part_vehicles.map(pv => pv.vehicles).filter(Boolean) : [];
                 const images = [item.image_1, item.image_2, item.image_3].filter(Boolean);
                 const currentPN = item.part_number ? item.part_number.trim().toUpperCase() : '';
 
-                // 廠商依成本由低到高排序
                 const suppliers = item.part_suppliers ? [...item.part_suppliers].sort((a, b) => {
                     const costA = a.cost !== null && a.cost !== undefined ? a.cost : Infinity;
                     const costB = b.cost !== null && b.cost !== undefined ? b.cost : Infinity;
@@ -1281,7 +1273,6 @@
                                         ❄️ 冷氣規格：${item.oil_capacity ? `冷凍油: ${item.oil_capacity} ` : ''}${item.refrigerant_capacity ? `冷媒: ${item.refrigerant_capacity}` : ''}
                                     </div>` : ''}
                                 
-                                <!-- 多廠商、廠商料號與成本列表 (由低到高排序) -->
                                 <div class="border-t pt-1.5 mt-1">
                                     <span class="font-bold text-slate-700 block mb-1">🏭 進貨廠商與叫貨料號 (成本低至高)：</span>
                                     ${suppliers.length > 0 ? `
@@ -1347,13 +1338,12 @@
                             <div class="flex flex-wrap gap-1">
                                 ${vehicles.map(v => {
                                     const startStr = v.start_month ? `${v.start_year}/${v.start_month}` : `${v.start_year}`;
-                                    const endY = (v.end_year !== null && v.end_year !== undefined) ? v.end_year : currentYear;
-                                    const endM = (v.end_month !== null && v.end_month !== undefined) ? v.end_month : ((v.end_year !== null && v.end_year !== undefined) ? null : currentMonth);
-                                    const endStr = endM ? `${endY}/${endM}` : `${endY}`;
+                                    const endStr = v.end_month ? `${v.end_year}/${v.end_month}` : `${v.end_year}`;
+                                    const ccStr = v.cc ? ` (${v.cc.toString().toLowerCase().includes('l') || v.cc.toString().toLowerCase().includes('cc') ? v.cc : (isNaN(v.cc) ? v.cc : (Number(v.cc) >= 1000 ? (Number(v.cc)/1000).toFixed(1) + 'L' : v.cc + 'cc'))})` : '';
                                     return `
                                         <span onclick="jumpToVehicleFilter('${v.brand}', '${v.model}', '${v.vehicle_type || ''}')" 
                                               class="text-xs bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2 py-0.5 rounded border cursor-pointer transition flex items-center gap-1">
-                                            <b class="text-blue-800">[${v.vehicle_type || '車種'}]</b> ${v.brand} ${v.model} (${startStr} - ${endStr}) ↗
+                                            <b class="text-blue-800">[${v.vehicle_type || '車種'}]</b> ${v.brand} ${v.model}${ccStr} (${startStr} - ${endStr}) ↗
                                         </span>
                                     `;
                                 }).join('')}
@@ -1390,7 +1380,6 @@
             renderEditImagesPreview();
             document.getElementById('edit-images').value = '';
 
-            // 填入廠商資料
             const editSuppliersContainer = document.getElementById('edit-suppliers-container');
             editSuppliersContainer.innerHTML = '';
             const suppliers = item.part_suppliers || [];
@@ -1490,7 +1479,7 @@
             const { data: partData, error } = await _supabase.from('parts').insert([partPayload]).select();
             if (error) { alert('❌ ' + error.message); return; }
 
-            await syncCrossReferences(partNum, crossRefText);
+            await syncCrossReferences(partNum, crossRefTest);
 
             const newPartId = partData[0].id;
             await saveSuppliers(newPartId, 'add-suppliers-container', 'add');
