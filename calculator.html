@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>台股當沖與波段損益試算器 (HW專用版)</title>
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --text: #202124;
+      --text-muted: #5f6368;
+      --border: #dadce0;
+      --stock-up: #d93025;
+      --stock-down: #188038;
+      --limit-up-bg: #fce8e6;
+      --limit-up-border: #f5c6cb;
+      --limit-down-bg: #e6f4ea;
+      --limit-down-border: #c3e6cb;
+      --entry-bg: #fff3cd;
+      --entry-border: #ffeeba;
+      --stop-loss-bg: #ffe0b2;
+      --stop-loss-border: #ffb74d;
+      --stop-loss-text: #e65100;
+    }
+
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 850px; margin: 0 auto; line-height: 1.5; }
+    
+    .card { background: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(60,64,67,0.12), 0 1px 2px rgba(60,64,67,0.24); margin-bottom: 20px; }
+    h2 { margin-top: 0; color: var(--text); font-size: 20px; border-bottom: 2px solid #f1f3f4; padding-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .form-group { display: flex; flex-direction: column; }
+    label { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+    input, select { padding: 10px 12px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px; outline: none; background: #fff; transition: border-color 0.2s; }
+    input:focus, select:focus { border-color: var(--primary); }
+
+    .stock-code-input { text-transform: uppercase; font-weight: bold; }
+
+    /* 進場價輸入框與按鈕群組設計 */
+    .price-input-group { display: flex; align-items: center; }
+    .price-input-group button { 
+      background: #f1f3f4; border: 1px solid var(--border); padding: 10px 14px; 
+      font-size: 16px; font-weight: bold; cursor: pointer; color: #3c4043; transition: background 0.2s;
+    }
+    .price-input-group button:hover { background: #e8eaed; }
+    .price-input-group button:first-child { border-radius: 6px 0 0 6px; border-right: none; }
+    .price-input-group button.clear-btn { 
+      background: #fce8e6; color: var(--stock-up); border-color: #fad2cf; font-size: 14px;
+    }
+    .price-input-group button.clear-btn:hover { background: #fad2cf; }
+    .price-input-group button:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+    .price-input-group input { border-radius: 0; text-align: center; flex: 1; min-width: 0; border-right: none; font-weight: 600; }
+
+    /* 隱藏預設微調箭頭 */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    /* 頂部漲跌停卡片摘要 */
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .summary-box { padding: 12px 16px; border-radius: 8px; text-align: center; }
+    .summary-box.up { background-color: var(--limit-up-bg); border: 1px solid var(--limit-up-border); color: var(--stock-up); }
+    .summary-box.down { background-color: var(--limit-down-bg); border: 1px solid var(--limit-down-border); color: var(--stock-down); }
+    .summary-box .title { font-size: 12px; font-weight: bold; opacity: 0.8; }
+    .summary-box .val { font-size: 22px; font-weight: bold; margin-top: 2px; }
+
+    /* 快捷設定檔位範圍與定位按鈕 */
+    .range-selector { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .range-selector label { margin-bottom: 0; }
+    .range-selector select { padding: 6px 10px; font-size: 14px; }
+    
+    .locate-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .locate-btn:hover { background: #1557b0; }
+    .locate-btn:active { transform: scale(0.96); }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid #f1f3f4; font-size: 14px; }
+    th { background: #f8f9fa; color: var(--text-muted); font-size: 13px; font-weight: 600; position: sticky; top: 0; z-index: 1; }
+    
+    .red { color: var(--stock-up); font-weight: bold; }
+    .green { color: var(--stock-down); font-weight: bold; }
+    
+    /* 特定列醒目標示 */
+    .entry-row { background-color: var(--entry-bg) !important; font-weight: bold; }
+    .entry-row td { color: #856404; border-top: 1px solid var(--entry-border); border-bottom: 1px solid var(--entry-border); }
+    
+    /* 停損點醒目標示 */
+    .stop-loss-row { background-color: var(--stop-loss-bg) !important; font-weight: bold; }
+    .stop-loss-row td { color: var(--stop-loss-text); border-top: 1px solid var(--stop-loss-border); border-bottom: 1px solid var(--stop-loss-border); }
+
+    /* 定位時的動態高亮閃爍效果 */
+    .entry-row.highlight-pulse {
+      animation: pulse-bg 1.2s ease-in-out;
+    }
+    @keyframes pulse-bg {
+      0% { background-color: #ffe082 !important; transform: scale(1.01); }
+      50% { background-color: #ffd54f !important; }
+      100% { background-color: var(--entry-bg) !important; transform: scale(1); }
+    }
+
+    .limit-up-row { background-color: var(--limit-up-bg) !important; font-weight: bold; }
+    .limit-up-row td { color: var(--stock-up); border-top: 2px solid var(--limit-up-border); border-bottom: 2px solid var(--limit-up-border); }
+
+    .limit-down-row { background-color: var(--limit-down-bg) !important; font-weight: bold; }
+    .limit-down-row td { color: var(--stock-down); border-top: 2px solid var(--limit-down-border); border-bottom: 2px solid var(--limit-down-border); }
+
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 4px; }
+    .badge-entry { background: #ffe8a1; color: #856404; }
+    .badge-stop-loss { background: #ff9800; color: #fff; }
+    .badge-up { background: var(--stock-up); color: #fff; }
+    .badge-down { background: var(--stock-down); color: #fff; }
+
+    .status-msg { font-size: 12px; margin-top: 4px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>🎯 交易參數與個股查詢</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>股票代號 (Enter 查詢)</label>
+        <input type="text" id="stockCode" class="stock-code-input" placeholder="2330" value="2330" onkeydown="handleCodeKeydown(event)">
+        <div id="statusMsg" class="status-msg"></div>
+      </div>
+      <div class="form-group">
+        <label>前日收盤/平盤價 (當日漲跌停基準)</label>
+        <input type="number" id="basePrice" value="100" step="0.01" oninput="handleBasePriceChange()">
+      </div>
+      <div class="form-group">
+        <label>個人進場股價 (可按 ↑/↓ 鍵增減檔位)</label>
+        <div class="price-input-group">
+          <button type="button" onclick="adjustPrice(-1)" title="減少一檔">－</button>
+          <input type="number" id="entryPrice" value="100" step="0.01" oninput="calculate()" onkeydown="handleEntryKeydown(event)">
+          <button type="button" class="clear-btn" onclick="clearEntryPrice()" title="清除價格">✕</button>
+          <button type="button" onclick="adjustPrice(1)" title="增加一檔">＋</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>停損幅度 (%) (例如: 3 或 5)</label>
+        <input type="number" id="stopLossPercent" placeholder="例: 3" step="0.1" min="0" max="100" oninput="calculate()">
+      </div>
+      <div class="form-group">
+        <label>交易類型</label>
+        <select id="tradeType" onchange="calculate()">
+          <option value="day">現股當沖 (證交稅 0.15%)</option>
+          <option value="swing">波段/一般 (證交稅 0.3%)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>交易方向</label>
+        <select id="direction" onchange="calculate()">
+          <option value="long">做多 (先買後賣)</option>
+          <option value="short">做空 (先賣後買)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>張數 (1張=1000股)</label>
+        <input type="number" id="shares" value="1" step="1" oninput="calculate()">
+      </div>
+      <div class="form-group">
+        <label>手續費折數 (例: 5折輸入 5)</label>
+        <input type="number" id="discount" value="1.5" step="0.1" oninput="calculate()">
+      </div>
+      <div class="form-group">
+        <label>單筆最低手續費 ($)</label>
+        <input type="number" id="minFee" value="20" step="1" oninput="calculate()">
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-box up">
+        <div class="title">當日漲停價 (+10%)</div>
+        <div class="val" id="limitUpVal">-</div>
+      </div>
+      <div class="summary-box down">
+        <div class="title">當日跌停價 (-10%)</div>
+        <div class="val" id="limitDownVal">-</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="range-selector">
+      <h2 style="border:none; padding:0; margin:0;">📊 損益試算表</h2>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button type="button" class="locate-btn" onclick="scrollToEntryRow()">🎯 定位進場價</button>
+        <label for="ticksRange">顯示檔位：</label>
+        <select id="ticksRange" onchange="calculate()">
+          <option value="full">全區間 (進場價 ➔ 漲跌停價)</option>
+          <option value="10">上下 10 檔</option>
+          <option value="15" selected>上下 15 檔</option>
+          <option value="20">上下 20 檔</option>
+        </select>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align:left;">出場價格</th>
+          <th>價差幅度</th>
+          <th>預估損益 ($)</th>
+          <th>報酬率</th>
+        </tr>
+      </thead>
+      <tbody id="resultBody"></tbody>
+    </table>
+  </div>
+
+<script>
+// 當使用者手動修改平盤價時，同步更新進場價並重新計算
+function handleBasePriceChange() {
+  const baseVal = document.getElementById('basePrice').value;
+  document.getElementById('entryPrice').value = baseVal;
+  calculate();
+}
+
+// Enter 鍵自動查詢，並將游標跳至「進場價」全選
+function handleCodeKeydown(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    fetchStockData();
+  }
+}
+
+// 支援鍵盤 ↑/↓ 鍵快速微調進場價檔位
+function handleEntryKeydown(e) {
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    adjustPrice(1);
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    adjustPrice(-1);
+  }
+}
+
+// 微調檔位
+function adjustPrice(dir) {
+  let priceInput = document.getElementById('entryPrice');
+  let currentPrice = parseFloat(priceInput.value) || 0;
+  
+  if (dir > 0) {
+    currentPrice += getTick(currentPrice);
+  } else {
+    let tick = getTick(currentPrice - 0.001);
+    currentPrice -= tick;
+  }
+  
+  currentPrice = Math.max(0.01, Math.round(currentPrice * 100) / 100);
+  priceInput.value = currentPrice;
+  calculate();
+}
+
+// 清除進場價並聚焦
+function clearEntryPrice() {
+  const priceInput = document.getElementById('entryPrice');
+  priceInput.value = '';
+  priceInput.focus();
+  calculate();
+}
+
+// 依 API 抓取股票名稱
+async function fetchStockName(code) {
+  try {
+    const res = await fetch(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo&data_id=${code}`);
+    const data = await res.json();
+    if (data.data && data.data.length > 0) {
+      return data.data[0].stock_name;
+    }
+  } catch (err) {}
+  return "";
+}
+
+// 核心：極速查詢平盤價
+async function fetchStockData() {
+  const code = document.getElementById('stockCode').value.trim();
+  const statusEl = document.getElementById('statusMsg');
+  if (!code) return;
+
+  statusEl.innerText = "⚡ 查詢中...";
+  statusEl.style.color = "var(--text-muted)";
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
+
+    const [res, name] = await Promise.all([
+      fetch(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=${getRecentDate()}`, { signal: controller.signal }),
+      fetchStockName(code)
+    ]);
+    
+    clearTimeout(timeoutId);
+    const data = await res.json();
+
+    if (data.data && data.data.length > 0) {
+      const latest = data.data[data.data.length - 1];
+      const closePrice = latest.close;
+
+      document.getElementById('basePrice').value = closePrice;
+      document.getElementById('entryPrice').value = closePrice;
+
+      const stockDisplayName = name ? ` ${name}` : "";
+      statusEl.innerText = `✅ [${code}${stockDisplayName}] 平盤價: ${closePrice}`;
+      statusEl.style.color = "var(--stock-down)";
+
+      focusEntryPrice();
+      calculate();
+    } else {
+      statusEl.innerText = "❌ 查無資料，請手動輸入";
+      statusEl.style.color = "var(--stock-up)";
+    }
+  } catch (err) {
+    fetchBackupApi(code);
+  }
+}
+
+// 備用 API 查詢
+async function fetchBackupApi(code) {
+  const statusEl = document.getElementById('statusMsg');
+  statusEl.innerText = "⏳ 自動切換備用通道...";
+  
+  const twseUrl = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_${code}.tw|otc_${code}.tw`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(twseUrl)}`;
+
+  try {
+    const res = await fetch(proxyUrl);
+    const wrapper = await res.json();
+    const data = JSON.parse(wrapper.contents);
+
+    if (data.msgArray && data.msgArray.length > 0) {
+      const stock = data.msgArray[0];
+      const yesterdayClose = parseFloat(stock.y);
+      const currentPrice = parseFloat(stock.z) || yesterdayClose;
+      const stockName = stock.n || "";
+
+      if (!isNaN(yesterdayClose) && yesterdayClose > 0) {
+        document.getElementById('basePrice').value = yesterdayClose;
+        document.getElementById('entryPrice').value = currentPrice;
+        
+        statusEl.innerText = `✅ [${code} ${stockName}] 平盤價: ${yesterdayClose}`;
+        statusEl.style.color = "var(--stock-down)";
+        
+        focusEntryPrice();
+        calculate();
+        return;
+      }
+    }
+    statusEl.innerText = "❌ 查無資料，請手動輸入";
+    statusEl.style.color = "var(--stock-up)";
+  } catch (err) {
+    statusEl.innerText = "❌ 連線超時，請手動輸入平盤價";
+    statusEl.style.color = "var(--stock-up)";
+  }
+}
+
+function getRecentDate() {
+  const d = new Date();
+  d.setDate(d.getDate() - 10);
+  return d.toISOString().split('T')[0];
+}
+
+function focusEntryPrice() {
+  const entryInput = document.getElementById('entryPrice');
+  entryInput.focus();
+  entryInput.select();
+}
+
+// 一鍵滾動定位到表格中的進場價列
+function scrollToEntryRow() {
+  const entryRow = document.querySelector('.entry-row');
+  if (entryRow) {
+    entryRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    entryRow.classList.remove('highlight-pulse');
+    void entryRow.offsetWidth; // 觸發重繪以重置動畫
+    entryRow.classList.add('highlight-pulse');
+  }
+}
+
+function getTick(price) {
+  if (price < 10) return 0.01;
+  if (price < 50) return 0.05;
+  if (price < 100) return 0.1;
+  if (price < 500) return 0.5;
+  if (price < 1000) return 1;
+  return 5;
+}
+
+// 將給定的估計價格轉換為最近符合檔位規律的合法價格
+function snapToTick(price) {
+  let tick = getTick(price);
+  return Math.round((Math.round(price / tick) * tick) * 100) / 100;
+}
+
+function calcLimitUp(base) {
+  let raw = base * 1.1;
+  let tick = getTick(raw);
+  return Math.round((Math.floor(raw / tick) * tick) * 100) / 100;
+}
+
+function calcLimitDown(base) {
+  let raw = base * 0.9;
+  let tick = getTick(raw);
+  return Math.max(0.01, Math.round((Math.ceil(raw / tick) * tick) * 100) / 100);
+}
+
+function calculate() {
+  const tradeType = document.getElementById('tradeType').value;
+  const direction = document.getElementById('direction').value;
+  const basePrice = parseFloat(document.getElementById('basePrice').value);
+  const entryPriceInput = document.getElementById('entryPrice').value;
+  const entryPrice = parseFloat(entryPriceInput);
+  const stopLossPercent = parseFloat(document.getElementById('stopLossPercent').value);
+  const shares = (parseFloat(document.getElementById('shares').value) || 1) * 1000;
+  const discount = (parseFloat(document.getElementById('discount').value) || 10) / 10;
+  const minFeeLimit = parseFloat(document.getElementById('minFee').value) || 0;
+  const ticksRangeMode = document.getElementById('ticksRange').value;
+
+  const tbody = document.getElementById('resultBody');
+  tbody.innerHTML = '';
+
+  if (isNaN(basePrice) || basePrice <= 0 || isNaN(entryPrice) || entryPrice <= 0) {
+    if (!isNaN(basePrice) && basePrice > 0) {
+      document.getElementById('limitUpVal').innerText = calcLimitUp(basePrice).toFixed(2);
+      document.getElementById('limitDownVal').innerText = calcLimitDown(basePrice).toFixed(2);
+    } else {
+      document.getElementById('limitUpVal').innerText = '-';
+      document.getElementById('limitDownVal').innerText = '-';
+    }
+    return;
+  }
+
+  const taxRate = tradeType === 'day' ? 0.0015 : 0.003;
+  const feeRate = 0.001425 * discount;
+
+  const limitUpPrice = calcLimitUp(basePrice);
+  const limitDownPrice = calcLimitDown(basePrice);
+
+  document.getElementById('limitUpVal').innerText = limitUpPrice.toFixed(2);
+  document.getElementById('limitDownVal').innerText = limitDownPrice.toFixed(2);
+
+  // 計算停損價格（根據做多或做空方向）
+  let stopLossPrice = null;
+  if (!isNaN(stopLossPercent) && stopLossPercent > 0) {
+    let rawStopPrice = direction === 'long' 
+      ? entryPrice * (1 - stopLossPercent / 100)
+      : entryPrice * (1 + stopLossPercent / 100);
+    
+    // 扣除或加上檔位並貼齊 Tick
+    stopLossPrice = snapToTick(rawStopPrice);
+    stopLossPrice = Math.max(limitDownPrice, Math.min(limitUpPrice, stopLossPrice));
+  }
+
+  let fullPrices = [];
+  let p = entryPrice;
+
+  while (p > limitDownPrice) {
+    p -= getTick(p - 0.001);
+    p = Math.round(p * 100) / 100;
+    if (p <= 0) break;
+    fullPrices.unshift(p);
+  }
+  if (!fullPrices.includes(limitDownPrice) && limitDownPrice < entryPrice) fullPrices.unshift(limitDownPrice);
+  if (!fullPrices.includes(entryPrice)) fullPrices.push(entryPrice);
+
+  p = entryPrice;
+  while (p < limitUpPrice) {
+    p += getTick(p);
+    p = Math.round(p * 100) / 100;
+    fullPrices.push(p);
+  }
+  if (!fullPrices.includes(limitUpPrice) && limitUpPrice > entryPrice) fullPrices.push(limitUpPrice);
+
+  // 若有設定停損價，確保將停損價納入陣列中
+  if (stopLossPrice !== null && !fullPrices.includes(stopLossPrice)) {
+    fullPrices.push(stopLossPrice);
+  }
+
+  // 基礎去重與排序
+  fullPrices = [...new Set(fullPrices)].sort((a, b) => a - b);
+
+  let displayPrices = fullPrices;
+  if (ticksRangeMode !== 'full') {
+    let count = parseInt(ticksRangeMode);
+    let entryIndex = fullPrices.indexOf(entryPrice);
+    let startIndex = Math.max(0, entryIndex - count);
+    let endIndex = Math.min(fullPrices.length - 1, entryIndex + count);
+    displayPrices = fullPrices.slice(startIndex, endIndex + 1);
+
+    if (!displayPrices.includes(limitDownPrice)) displayPrices.unshift(limitDownPrice);
+    if (!displayPrices.includes(limitUpPrice)) displayPrices.push(limitUpPrice);
+    if (stopLossPrice !== null && !displayPrices.includes(stopLossPrice)) displayPrices.push(stopLossPrice);
+    displayPrices = [...new Set(displayPrices)].sort((a, b) => a - b);
+  }
+
+  // 多空獲利方向動態排序：做多(高價在上方)、做空(低價在上方)
+  if (direction === 'long') {
+    displayPrices.sort((a, b) => b - a);
+  } else {
+    displayPrices.sort((a, b) => a - b);
+  }
+
+  displayPrices.forEach((exitPrice) => {
+    let isEntryRow = (exitPrice === entryPrice);
+    let isStopLossRow = (stopLossPrice !== null && exitPrice === stopLossPrice && !isEntryRow);
+    let isLimitUp = (exitPrice === limitUpPrice);
+    let isLimitDown = (exitPrice === limitDownPrice);
+    
+    let buyPrice = direction === 'long' ? entryPrice : exitPrice;
+    let sellPrice = direction === 'long' ? exitPrice : entryPrice;
+
+    let rawBuyFee = Math.floor(buyPrice * shares * feeRate);
+    let rawSellFee = Math.floor(sellPrice * shares * feeRate);
+
+    let buyFee = Math.max(minFeeLimit, rawBuyFee);
+    let sellFee = Math.max(minFeeLimit, rawSellFee);
+    let sellTax = Math.floor(sellPrice * shares * taxRate);
+
+    let buyCost = (buyPrice * shares) + buyFee;
+    let sellIncome = (sellPrice * shares) - sellFee - sellTax;
+
+    let profit = sellIncome - buyCost;
+    let roi = ((profit / buyCost) * 100).toFixed(2);
+    let diffPercent = (((exitPrice - entryPrice) / entryPrice) * 100).toFixed(2);
+    if (diffPercent > 0) diffPercent = '+' + diffPercent;
+
+    let colorClass = profit > 0 ? 'red' : (profit < 0 ? 'green' : ''); 
+    if (isEntryRow) colorClass = '';
+
+    let row = document.createElement('tr');
+    if (isEntryRow) row.className = 'entry-row';
+    else if (isStopLossRow) row.className = 'stop-loss-row';
+    else if (isLimitUp) row.className = 'limit-up-row';
+    else if (isLimitDown) row.className = 'limit-down-row';
+
+    let badgeHtml = '';
+    if (isEntryRow) badgeHtml = '<span class="badge badge-entry">進場價</span>';
+    else if (isStopLossRow) badgeHtml = `<span class="badge badge-stop-loss">停損點 (${stopLossPercent}%)</span>`;
+    if (isLimitUp) badgeHtml += '<span class="badge badge-up">漲停</span>';
+    if (isLimitDown) badgeHtml += '<span class="badge badge-down">跌停</span>';
+
+    row.innerHTML = `
+      <td style="text-align:left; font-size: 15px;">${exitPrice.toFixed(2)} ${badgeHtml}</td>
+      <td>${isEntryRow ? '-' : diffPercent + '%'}</td>
+      <td class="${colorClass}">${profit > 0 ? '+' : ''}${profit.toLocaleString()}</td>
+      <td class="${colorClass}">${isEntryRow ? '-' : roi + '%'}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+calculate();
+</script>
+</body>
+</html>
