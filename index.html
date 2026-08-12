@@ -828,7 +828,7 @@
             for (const row of rows) {
                 const supplier_name = row.querySelector(`.${prefix}-sup-name`).value.trim();
                 const supplier_part_number = row.querySelector(`.${prefix}-sup-partnum`).value.trim();
-                const costStr = row.querySelector(`.${prefix}-sup-cost`).value;
+                const costStr = row.querySelector(`.${prefix}-sup-cost`).value.trim();
                 const remarks = row.querySelector(`.${prefix}-sup-remarks`).value.trim();
 
                 if (!supplier_name && !supplier_part_number && !costStr && !remarks) continue;
@@ -914,9 +914,9 @@
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始年份 *</label><input type="number" class="${prefix}-v-start w-full border rounded-lg p-2 text-sm bg-white" required value="${v.start_year || ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label><input type="number" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.start_month || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">起始月份</label><input type="number" class="${prefix}-v-start-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.start_month !== null && v.start_month !== undefined ? v.start_month : ''}"></div>
                         <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束年份 (選填)</label><input type="number" class="${prefix}-v-end w-full border rounded-lg p-2 text-sm bg-white" value="${v.end_year !== null && v.end_year !== undefined ? v.end_year : ''}"></div>
-                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label><input type="number" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.end_month || ''}"></div>
+                        <div><label class="block text-xs font-semibold text-slate-600 mb-1">結束月份</label><input type="number" class="${prefix}-v-end-m w-full border rounded-lg p-2 text-sm bg-white" value="${v.end_month !== null && v.end_month !== undefined ? v.end_month : ''}"></div>
                     </div>
                 </div>
             `;
@@ -971,11 +971,18 @@
                 const brand = row.querySelector(`.${prefix}-v-brand`).value.trim();
                 const model = row.querySelector(`.${prefix}-v-model`).value.trim();
                 const cc = row.querySelector(`.${prefix}-v-cc`).value.trim() || null;
-                const startYear = parseInt(row.querySelector(`.${prefix}-v-start`).value);
-                const startMonth = parseInt(row.querySelector(`.${prefix}-v-start-m`).value) || null;
-                const endYearStr = row.querySelector(`.${prefix}-v-end`).value;
-                const endYear = endYearStr !== '' ? parseInt(endYearStr) : null;
-                const endMonth = parseInt(row.querySelector(`.${prefix}-v-end-m`).value) || null;
+                
+                const startYearStr = row.querySelector(`.${prefix}-v-start`).value.trim();
+                const startYear = startYearStr !== '' ? parseInt(startYearStr, 10) : null;
+
+                const startMonthStr = row.querySelector(`.${prefix}-v-start-m`).value.trim();
+                const startMonth = startMonthStr !== '' ? parseInt(startMonthStr, 10) : null;
+
+                const endYearStr = row.querySelector(`.${prefix}-v-end`).value.trim();
+                const endYear = endYearStr !== '' ? parseInt(endYearStr, 10) : null;
+
+                const endMonthStr = row.querySelector(`.${prefix}-v-end-m`).value.trim();
+                const endMonth = endMonthStr !== '' ? parseInt(endMonthStr, 10) : null;
 
                 if (!brand || !model || isNaN(startYear)) continue;
 
@@ -983,11 +990,11 @@
                     v.brand === brand &&
                     v.model === model &&
                     v.start_year === startYear &&
-                    (v.vehicle_type || null) === vehicleType &&
-                    (v.cc || null) === cc &&
-                    (v.start_month || null) === startMonth &&
-                    (v.end_year || null) === endYear &&
-                    (v.end_month || null) === endMonth
+                    (v.vehicle_type ?? null) === vehicleType &&
+                    (v.cc ?? null) === cc &&
+                    (v.start_month ?? null) === startMonth &&
+                    (v.end_year ?? null) === endYear &&
+                    (v.end_month ?? null) === endMonth
                 );
 
                 if (existing) {
@@ -1163,7 +1170,8 @@
             const searchVType = document.getElementById('search-vehicle-type').value.trim().toLowerCase();
             const searchBrand = document.getElementById('search-brand').value.trim().toLowerCase();
             const searchModel = document.getElementById('search-model').value.trim().toLowerCase();
-            const year = parseInt(document.getElementById('search-year').value);
+            const yearStr = document.getElementById('search-year').value.trim();
+            const year = yearStr !== '' ? parseInt(yearStr, 10) : NaN;
             const selectedPartNames = Array.from(selectedPartNamesSet);
             const keyword = document.getElementById('search-keyword').value.trim();
 
@@ -1209,8 +1217,7 @@
                         return (!searchVType || (v.vehicle_type && v.vehicle_type.toLowerCase().includes(searchVType))) &&
                                (!searchBrand || (v.brand && v.brand.toLowerCase().includes(searchBrand))) &&
                                (!searchModel || (v.model && v.model.toLowerCase().includes(searchModel))) &&
-                               // 💡 修正處：當使用者有指定搜尋年份時，若車型資料的結束年份為空/null，則視為現今適用（即 year >= start_year 即可成立）
-                               (isNaN(year) || (year >= v.start_year && (!v.end_year || year <= v.end_year)));
+                               (isNaN(year) || (year >= v.start_year && (v.end_year == null || v.end_year === '' || year <= v.end_year)));
                     });
                 }
 
@@ -1392,7 +1399,7 @@
             document.getElementById('edit-refrigerant-capacity').value = item.refrigerant_capacity || '';
             document.getElementById('edit-cross-ref').value = item.cross_reference || '';
             document.getElementById('edit-kit-parts').value = item.kit_parts || '';
-            document.getElementById('edit-price').value = item.price || '';
+            document.getElementById('edit-price').value = item.price !== null && item.price !== undefined ? item.price : '';
             document.getElementById('edit-price-date').value = item.price_date || '';
             document.getElementById('edit-remarks').value = item.remarks || '';
 
@@ -1434,6 +1441,9 @@
             const newlyUploadedUrls = await uploadNewEditImages();
             const finalImages = [...editCurrentImages, ...newlyUploadedUrls].slice(0, 3);
 
+            const priceStr = document.getElementById('edit-price').value.trim();
+            const price = priceStr !== '' ? parseFloat(priceStr) : null;
+
             const updatePayload = {
                 part_name: document.getElementById('edit-part-name').value.trim(),
                 brand_name: document.getElementById('edit-brand-name').value.trim(),
@@ -1447,7 +1457,7 @@
                 refrigerant_capacity: document.getElementById('edit-refrigerant-capacity').value.trim() || null,
                 cross_reference: crossRefText || null,
                 kit_parts: document.getElementById('edit-kit-parts').value.trim() || null,
-                price: parseFloat(document.getElementById('edit-price').value) || null,
+                price: price,
                 price_date: document.getElementById('edit-price-date').value || null,
                 remarks: document.getElementById('edit-remarks').value.trim() || null,
                 image_1: finalImages[0] || null,
@@ -1476,6 +1486,9 @@
             const partNum = document.getElementById('add-part-number').value.trim();
             const crossRefText = document.getElementById('add-cross-ref').value.trim();
 
+            const priceStr = document.getElementById('add-price').value.trim();
+            const price = priceStr !== '' ? parseFloat(priceStr) : null;
+
             const partPayload = {
                 part_name: document.getElementById('add-part-name').value.trim(),
                 brand_name: document.getElementById('add-brand-name').value.trim(),
@@ -1489,7 +1502,7 @@
                 refrigerant_capacity: document.getElementById('add-refrigerant-capacity').value.trim() || null,
                 cross_reference: crossRefText || null,
                 kit_parts: document.getElementById('add-kit-parts').value.trim() || null,
-                price: parseFloat(document.getElementById('add-price').value) || null,
+                price: price,
                 price_date: document.getElementById('add-price-date').value || null,
                 remarks: document.getElementById('add-remarks').value.trim() || null
             };
