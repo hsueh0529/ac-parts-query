@@ -1479,7 +1479,8 @@
             const { data: partData, error } = await _supabase.from('parts').insert([partPayload]).select();
             if (error) { alert('❌ ' + error.message); return; }
 
-            await syncCrossReferences(partNum, crossRefTest);
+            // 修正處：將原本錯誤的 crossRefTest 改為正確的 crossRefText
+            await syncCrossReferences(partNum, crossRefText);
 
             const newPartId = partData[0].id;
             await saveSuppliers(newPartId, 'add-suppliers-container', 'add');
