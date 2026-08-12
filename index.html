@@ -976,7 +976,7 @@
                 let q = _supabase.from('vehicles').select('id').eq('brand', brand).eq('model', model).eq('start_year', startYear);
                 if (vehicleType) q = q.eq('vehicle_type', vehicleType);
                 else q = q.is('vehicle_type', null);
-                if (cc) q = q.eq('cc', cc);
+                if (cc) q = q.eq('cc');
                 else q = q.is('cc', null);
                 if (startMonth) q = q.eq('start_month', startMonth);
                 else q = q.is('start_month', null);
