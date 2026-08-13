@@ -602,7 +602,7 @@
             searchParts();
         }
 
-        // 🚀 新增：渲染可替料號對應的詳細資訊卡片（含名稱、品牌、成本/售價）
+        /* 🚀 調整後：優先顯示對應零件的「參考前價 (price)」，若無才顯示成本價 */
         function renderAssociatedCrossRefCards(crossRefText, allPartsList) {
             if (!crossRefText) return '<span class="text-slate-400 text-[11px]">無可替料號</span>';
             
@@ -616,16 +616,16 @@
                 if (matchedParts.length > 0) {
                     matchedParts.forEach(matchedPart => {
                         const img = matchedPart.image_1 || matchedPart.image_2 || matchedPart.image_3;
-                        // 取得最低成本或參考售價供參考
+                        
                         const lowestCost = matchedPart.part_suppliers && matchedPart.part_suppliers.length > 0 
                             ? Math.min(...matchedPart.part_suppliers.map(s => s.cost !== null && s.cost !== undefined ? s.cost : Infinity)) 
                             : Infinity;
                         
                         let priceDisplay = '';
-                        if (lowestCost !== Infinity) {
+                        if (matchedPart.price) {
+                            priceDisplay = `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">前價: $${Number(matchedPart.price).toLocaleString()}</span>`;
+                        } else if (lowestCost !== Infinity) {
                             priceDisplay = `<span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">成本: $${lowestCost.toLocaleString()}</span>`;
-                        } else if (matchedPart.price) {
-                            priceDisplay = `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">售價: $${Number(matchedPart.price).toLocaleString()}</span>`;
                         } else {
                             priceDisplay = `<span class="text-[10px] text-slate-400">未報價</span>`;
                         }
@@ -1319,7 +1319,7 @@
                                     </div>` : ''}
                                 ${item.cross_reference ? `
                                     <div class="border-t pt-1.5 mt-1">
-                                        <span class="text-slate-500 font-bold block mb-1">🔗 可替料號對照 (品牌/名稱/成本)：</span>
+                                        <span class="text-slate-500 font-bold block mb-1">🔗 可替料號對照 (品牌/名稱/前價)：</span>
                                         ${renderAssociatedCrossRefCards(item.cross_reference, allData)}
                                     </div>` : ''}
                                 ${(item.length || item.width || item.height) ? `
