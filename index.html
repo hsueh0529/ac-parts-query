@@ -244,10 +244,10 @@
                         <textarea id="add-kit-parts" rows="2" placeholder="格式範例: 膨脹閥 [V-101], 墊片 [GASKET-01]" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white"></textarea>
                     </div>
 
-                    <!-- 零件本身的備註框 (獨立保留) -->
+                    <!-- 零件本身的備註框 (改為多行 Textarea 支援換行與放大) -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">零件主檔備註/規格說明 (獨立)</label>
-                        <input type="text" id="add-remarks" placeholder="例如: R134a, 帶線圈, 24V" class="w-full border rounded-lg p-2 text-sm bg-white">
+                        <textarea id="add-remarks" rows="3" placeholder="例如: R134a, 帶線圈, 24V (可支援 Enter 換行)" class="w-full border rounded-lg p-2 text-sm bg-white"></textarea>
                     </div>
 
                     <div class="bg-white p-3 rounded-lg border border-slate-200">
@@ -389,9 +389,10 @@
                         <textarea id="edit-kit-parts" rows="2" class="w-full border border-amber-300 rounded-lg p-2 text-sm font-mono bg-white" placeholder="例: 膨脹閥 [V-101], 墊片 [GASKET-01]"></textarea>
                     </div>
 
+                    <!-- 編輯區備註 (改為多行 Textarea 支援換行與放大) -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">零件主檔備註說明 (獨立)</label>
-                        <input type="text" id="edit-remarks" class="w-full border rounded-lg p-2 text-sm bg-white">
+                        <textarea id="edit-remarks" rows="3" class="w-full border rounded-lg p-2 text-sm bg-white" placeholder="例如: R134a, 帶線圈, 24V (可支援 Enter 換行)"></textarea>
                     </div>
 
                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
@@ -469,7 +470,7 @@
 
             // 點擊頁面其他地方時隱藏所有的自訂下拉建議選單
             document.addEventListener('click', (e) => {
-                if (!e.target.closest('input') && !e.target.closest('.suggestions-dropdown')) {
+                if (!e.target.closest('input') && !e.target.closest('textarea') && !e.target.closest('.suggestions-dropdown')) {
                     document.querySelectorAll('.suggestions-dropdown').forEach(el => el.classList.add('hidden'));
                 }
             });
@@ -602,7 +603,6 @@
             searchParts();
         }
 
-        /* 🚀 調整後：優先顯示對應零件的「參考前價 (price)」，若無才顯示成本價 */
         function renderAssociatedCrossRefCards(crossRefText, allPartsList) {
             if (!crossRefText) return '<span class="text-slate-400 text-[11px]">無可替料號</span>';
             
@@ -1350,7 +1350,7 @@
                                 </div>
 
                                 ${item.remarks ? `
-                                    <div class="text-slate-700 border-t pt-1.5 mt-1">
+                                    <div class="text-slate-700 border-t pt-1.5 mt-1 whitespace-pre-line">
                                         <span class="font-bold">📝 零件主檔備註：</span>${item.remarks}
                                     </div>` : ''}
                             </div>
