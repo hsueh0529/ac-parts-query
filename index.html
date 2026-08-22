@@ -603,18 +603,23 @@
             searchParts();
         }
 
-        function renderAssociatedCrossRefCards(crossRefText, allPartsList) {
+        function renderAssociatedCrossRefCards(crossRefText, allPartsList, currentPartId) {
             if (!crossRefText) return '<span class="text-slate-400 text-[11px]">無可替料號</span>';
             
             const refs = parseCrossRefCount(crossRefText);
             if (refs.length === 0) return `<span class="font-mono text-indigo-800">${crossRefText}</span>`;
 
             let cardsHtml = '<div class="space-y-1.5 mt-1">';
+            let renderedIds = new Set(); // 避免重複渲染相同的零件 ID
+
             refs.forEach(cleanNum => {
-                const matchedParts = allPartsList.filter(p => p.part_number && p.part_number.trim().toUpperCase() === cleanNum);
+                const matchedParts = allPartsList.filter(p => p.part_number && p.part_number.trim().toUpperCase() === cleanNum && p.id !== currentPartId);
 
                 if (matchedParts.length > 0) {
                     matchedParts.forEach(matchedPart => {
+                        if (renderedIds.has(matchedPart.id)) return; // 若已經渲染過則略過
+                        renderedIds.add(matchedPart.id);
+
                         const img = matchedPart.image_1 || matchedPart.image_2 || matchedPart.image_3;
                         
                         const lowestCost = matchedPart.part_suppliers && matchedPart.part_suppliers.length > 0 
@@ -673,12 +678,17 @@
             }
 
             let cardsHtml = '<div class="space-y-1.5 mt-2">';
+            let renderedKitIds = new Set();
+
             matches.forEach(m => {
                 const cleanNum = m.replace(/[\[\]]/g, '').trim().toUpperCase();
                 const matchedParts = allPartsList.filter(p => p.part_number && p.part_number.trim().toUpperCase() === cleanNum);
 
                 if (matchedParts.length > 0) {
                     matchedParts.forEach(matchedPart => {
+                        if (renderedKitIds.has(matchedPart.id)) return;
+                        renderedKitIds.add(matchedPart.id);
+
                         const img = matchedPart.image_1 || matchedPart.image_2 || matchedPart.image_3;
                         const priceStr = matchedPart.price ? `NT$ ${Number(matchedPart.price).toLocaleString()}` : '未報價';
                         cardsHtml += `
@@ -1320,7 +1330,7 @@
                                 ${item.cross_reference ? `
                                     <div class="border-t pt-1.5 mt-1">
                                         <span class="text-slate-500 font-bold block mb-1">🔗 可替料號對照 (品牌/名稱/前價)：</span>
-                                        ${renderAssociatedCrossRefCards(item.cross_reference, allData)}
+                                        ${renderAssociatedCrossRefCards(item.cross_reference, allData, item.id)}
                                     </div>` : ''}
                                 ${(item.length || item.width || item.height) ? `
                                     <div class="text-slate-600 border-t pt-1.5 mt-1">
